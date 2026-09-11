@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AdeptIELTS</title>
+    <script>
+      // SPA redirect for GitHub Pages custom domains
+      var path = window.location.pathname;
+      var search = window.location.search;
+      var hash = window.location.hash;
+      
+      // If accessed via old /AdeptIELTS repository path on the custom domain, strip it
+      if (path.startsWith('/AdeptIELTS')) {
+        var cleanPath = path.replace(/^\/AdeptIELTS\/?/, '/');
+        window.location.replace(window.location.origin + cleanPath + search + hash);
+      } else {
+        window.location.replace(window.location.origin + '/' + search + hash);
+      }
+    </script>
+  </head>
+  <body></body>
+</html>
