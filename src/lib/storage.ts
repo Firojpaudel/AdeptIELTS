@@ -405,10 +405,10 @@ export function loadAISettings(): AISettings {
   }
 }
 
-export function saveAISettings(settings: AISettings): void {
+export function saveAISettings(settings: AISettings, profileId?: string): void {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    const pid = getActiveProfileId();
+    const pid = profileId || getActiveProfileId();
     if (pid) {
       saveTursoUserSettings(pid, settings).catch(err => {
         console.warn('Failed to sync AI settings to Turso:', err);
@@ -416,6 +416,24 @@ export function saveAISettings(settings: AISettings): void {
     }
   } catch (e) {
     console.error('Failed to save AI settings', e);
+  }
+}
+
+export async function saveAISettingsAsync(
+  settings: AISettings,
+  profileId?: string
+): Promise<{ success: boolean; syncedToTurso: boolean }> {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const pid = profileId || getActiveProfileId();
+    if (pid) {
+      await saveTursoUserSettings(pid, settings);
+      return { success: true, syncedToTurso: true };
+    }
+    return { success: true, syncedToTurso: false };
+  } catch (e) {
+    console.error('Failed to save AI settings async', e);
+    return { success: false, syncedToTurso: false };
   }
 }
 

@@ -16,6 +16,16 @@ import {
   History,
   BarChart3,
   Clock,
+  Zap,
+  Compass,
+  PenTool,
+  Mic,
+  Headphones,
+  Check,
+  ChevronRight,
+  Filter,
+  ShieldCheck,
+  Cloud,
 } from 'lucide-react';
 import { LearnerProfile, QuestionAttempt, ExamScoreRecord } from '../../lib/types';
 import { loadExamScores, loadReadResourceIds, loadCritiqueHistory } from '../../lib/storage';
@@ -42,6 +52,22 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
   const [aiCritique, setAiCritique] = useState<AIExamCritique | null>(null);
   const [critiqueHistory, setCritiqueHistory] = useState<any[]>([]);
   const [isCritiquing, setIsCritiquing] = useState(false);
+  const [subskillFilter, setSubskillFilter] = useState<'all' | 'reading' | 'writing' | 'speaking'>('all');
+
+  const getSkillFromSubskill = (subskill: string): 'reading' | 'writing' | 'speaking' | 'listening' => {
+    const s = (subskill || '').toLowerCase();
+    if (s.includes('task') || s.includes('essay') || s.includes('writ')) return 'writing';
+    if (s.includes('speak') || s.includes('monologue') || s.includes('part 2')) return 'speaking';
+    if (s.includes('listen')) return 'listening';
+    return 'reading';
+  };
+
+  const getDestinationTab = (affectedSkill: string, subskillKey?: string): string => {
+    const s = (affectedSkill || subskillKey || '').toLowerCase();
+    if (s.includes('writ') || s.includes('task') || s.includes('essay')) return 'writing';
+    if (s.includes('speak') || s.includes('monologue') || s.includes('part 2')) return 'speaking';
+    return 'practice';
+  };
 
   const handleRefreshCritique = async (scoresToUse: ExamScoreRecord[]) => {
     setIsCritiquing(true);
@@ -216,175 +242,246 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
           </div>
 
           {aiCritique ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-              {/* Executive Diagnosis Banner */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              {/* Executive Diagnosis & Readiness Card */}
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'minmax(220px, 280px) 1fr',
-                gap: '1.25rem',
+                gridTemplateColumns: 'minmax(280px, 340px) 1fr',
+                gap: '1.5rem',
                 backgroundColor: 'var(--bg-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '1.25rem',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.5rem',
                 border: '1px solid var(--border-subtle)',
+                boxShadow: 'var(--shadow-sm)',
               }}>
-                <div>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-                    Target Band Readiness
-                  </div>
-                  <div className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-primary)', marginTop: '0.25rem' }}>
-                    {aiCritique.readinessPercentage}% Ready
-                  </div>
-                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                    {aiCritique.overallReadiness}
-                  </div>
-                  <div style={{
-                    width: '100%',
-                    height: '8px',
-                    backgroundColor: 'rgba(0,0,0,0.06)',
-                    borderRadius: 'var(--radius-full)',
-                    marginTop: '0.65rem',
-                    overflow: 'hidden',
-                  }}>
-                    <div style={{
-                      width: `${aiCritique.readinessPercentage}%`,
-                      height: '100%',
-                      backgroundColor: 'var(--brand-primary)',
-                      borderRadius: 'var(--radius-full)',
-                      transition: 'width 0.6s ease',
-                    }} />
-                  </div>
-                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
-                    Estimated timeline: <strong>{aiCritique.timelineEstimate}</strong>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                  <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
-                    Executive Examiner Synthesis
-                  </div>
-                  <p style={{ fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
-                    {aiCritique.executiveSummary}
-                  </p>
-                </div>
-              </div>
-
-              {/* Diagnosed Bottlenecks */}
-              <div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <ShieldAlert size={14} color="var(--warning)" />
-                  <span>Primary Score Impediments Diagnosed by AI</span>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.85rem' }}>
-                  {aiCritique.keyBottlenecks.map((bn, i) => (
-                    <div
-                      key={i}
-                      style={{
-                        padding: '1rem',
-                        borderRadius: 'var(--radius-md)',
-                        backgroundColor: 'var(--bg-surface)',
-                        border: '1px solid var(--border-default)',
+                {/* Visual Radial Readiness Meter */}
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'space-between',
+                  gap: '1rem',
+                  paddingRight: '1rem',
+                  borderRight: '1px solid var(--border-subtle)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                    {/* SVG Circular Readiness Meter */}
+                    <div style={{ position: 'relative', width: '92px', height: '92px', flexShrink: 0 }}>
+                      <svg width="92" height="92" viewBox="0 0 92 92" style={{ transform: 'rotate(-90deg)' }}>
+                        <circle
+                          cx="46"
+                          cy="46"
+                          r="38"
+                          stroke="rgba(0,0,0,0.06)"
+                          strokeWidth="8"
+                          fill="transparent"
+                        />
+                        <circle
+                          cx="46"
+                          cy="46"
+                          r="38"
+                          stroke="var(--brand-primary)"
+                          strokeWidth="8"
+                          strokeDasharray={238.76}
+                          strokeDashoffset={238.76 * (1 - (aiCritique.readinessPercentage || 50) / 100)}
+                          strokeLinecap="round"
+                          fill="transparent"
+                          style={{ transition: 'stroke-dashoffset 0.8s cubic-bezier(0.23, 1, 0.32, 1)' }}
+                        />
+                      </svg>
+                      <div style={{
+                        position: 'absolute',
+                        inset: 0,
                         display: 'flex',
                         flexDirection: 'column',
-                        gap: '0.4rem',
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--brand-primary)' }}>
-                          {bn.affectedSkill} Bottleneck
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}>
+                        <span className="font-mono" style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--brand-primary)', lineHeight: 1 }}>
+                          {aiCritique.readinessPercentage}%
                         </span>
-                        <span className="badge badge-warning" style={{ fontSize: '0.68rem' }}>
-                          Score Drag
+                        <span style={{ fontSize: '0.62rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em', marginTop: '2px' }}>
+                          Ready
                         </span>
-                      </div>
-                      <div style={{ fontWeight: 650, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
-                        {bn.title}
-                      </div>
-                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                        {bn.description}
-                      </p>
-                      <div style={{ fontSize: '0.76rem', color: 'var(--error)', fontWeight: 500, marginTop: 'auto', paddingTop: '0.35rem', borderTop: '1px dashed var(--border-subtle)' }}>
-                        Impact: {bn.impact}
                       </div>
                     </div>
-                  ))}
+
+                    <div>
+                      <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                        Target Readiness
+                      </div>
+                      <div style={{ fontSize: '1.05rem', fontWeight: 750, color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                        Band {(profile.currentEstimatedBand || 5.5).toFixed(1)} <span style={{ color: 'var(--brand-primary)' }}>➔</span> Band {(profile.targetBand || 7.5).toFixed(1)}
+                      </div>
+                      <span className="badge badge-brand" style={{ fontSize: '0.66rem', marginTop: '0.35rem' }}>
+                        On Track for Goal
+                      </span>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    backgroundColor: 'var(--bg-surface)',
+                    borderRadius: 'var(--radius-sm)',
+                    padding: '0.65rem 0.85rem',
+                    border: '1px solid var(--border-subtle)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.78rem',
+                    color: 'var(--text-secondary)',
+                  }}>
+                    <Calendar size={14} color="var(--brand-primary)" />
+                    <span>Study pace: <strong>{aiCritique.timelineEstimate}</strong></span>
+                  </div>
+                </div>
+
+                {/* Supportive Examiner Insights */}
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--brand-primary)', letterSpacing: '0.04em' }}>
+                      <Sparkles size={14} />
+                      <span>Senior IELTS Examiner Assessment</span>
+                    </div>
+                    {aiCritique.bandProgressionDelta !== undefined && (
+                      <span className="badge badge-success" style={{ fontSize: '0.68rem' }}>
+                        {aiCritique.bandProgressionDelta >= 0 ? '+' : ''}{aiCritique.bandProgressionDelta.toFixed(1)} Band Trajectory
+                      </span>
+                    )}
+                  </div>
+
+                  <p style={{ fontSize: '0.9rem', lineHeight: 1.65, color: 'var(--text-primary)', margin: 0 }}>
+                    {aiCritique.executiveSummary}
+                  </p>
+
+                  {attempts.length === 0 && (
+                    <div style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.45rem',
+                      fontSize: '0.78rem',
+                      color: 'var(--brand-primary)',
+                      backgroundColor: 'var(--brand-surface)',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: 'var(--radius-sm)',
+                      marginTop: '0.35rem',
+                    }}>
+                      <Compass size={14} />
+                      <span>
+                        <strong>Baseline Diagnostic Mode:</strong> Complete your first quick practice drill or mock test to see your live calibrated accuracy adapt here in real time!
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
 
-              {/* Visual Diagnostic Chart: What Candidate is Majorly Struggling With */}
-              <div style={{
-                backgroundColor: 'var(--bg-subtle)',
-                borderRadius: 'var(--radius-md)',
-                padding: '1.25rem',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '1rem',
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+              {/* High-Impact Band Boosters */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                    <BarChart3 size={16} color="var(--brand-primary)" />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Diagnostic Matrix: What You Are Majorly Struggling With
+                    <Zap size={16} color="var(--warning)" />
+                    <span style={{ fontSize: '0.86rem', fontWeight: 750, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      High-Impact Band Boosters
                     </span>
                   </div>
-                  <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
-                    Derived dynamically from {attempts.length} attempts & error patterns
+                  <span className="badge badge-warning" style={{ fontSize: '0.68rem' }}>
+                    Target: +0.5 to +1.0 Band Leap
                   </span>
                 </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {(aiCritique.strugglingAreas || []).slice(0, 5).map((area, idx) => {
-                    const isCritical = area.severity === 'critical';
-                    const isModerate = area.severity === 'moderate';
-                    const barColor = isCritical ? 'var(--error)' : isModerate ? 'var(--warning)' : 'var(--success)';
-                    const badgeClass = isCritical ? 'badge-error' : isModerate ? 'badge-warning' : 'badge-success';
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '0.85rem' }}>
+                  {aiCritique.keyBottlenecks.map((bn, i) => {
+                    const skill = bn.affectedSkill || 'reading';
+                    const iconColor =
+                      skill === 'reading' ? 'var(--brand-primary)' :
+                      skill === 'writing' ? '#8b5cf6' :
+                      skill === 'speaking' ? '#f59e0b' : '#3b82f6';
+                    const iconBg =
+                      skill === 'reading' ? 'rgba(13, 148, 136, 0.08)' :
+                      skill === 'writing' ? 'rgba(139, 92, 246, 0.08)' :
+                      skill === 'speaking' ? 'rgba(245, 158, 11, 0.08)' : 'rgba(59, 130, 246, 0.08)';
 
                     return (
-                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <strong style={{ color: 'var(--text-primary)' }}>{area.subskillLabel}</strong>
-                            <span className={`badge ${badgeClass}`} style={{ fontSize: '0.65rem' }}>
-                              {area.severity.toUpperCase()}
-                            </span>
-                            {idx === 0 && (
-                              <span className="badge badge-error" style={{ fontSize: '0.62rem' }}>
-                                Primary Impediment
+                      <div
+                        key={i}
+                        style={{
+                          padding: '1.15rem',
+                          borderRadius: 'var(--radius-md)',
+                          backgroundColor: 'var(--bg-surface)',
+                          border: '1px solid var(--border-default)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: 'space-between',
+                          gap: '0.65rem',
+                          boxShadow: 'var(--shadow-sm)',
+                          transition: 'border-color 0.15s ease, transform 0.15s ease',
+                        }}
+                      >
+                        <div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                              <div style={{
+                                width: '24px',
+                                height: '24px',
+                                borderRadius: 'var(--radius-sm)',
+                                backgroundColor: iconBg,
+                                color: iconColor,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                              }}>
+                                {skill === 'reading' ? <BookOpen size={13} /> :
+                                 skill === 'writing' ? <PenTool size={13} /> :
+                                 skill === 'speaking' ? <Mic size={13} /> : <Headphones size={13} />}
+                              </div>
+                              <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: iconColor }}>
+                                {skill} Focus
                               </span>
-                            )}
-                          </div>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                            <span className="font-mono" style={{ fontWeight: 650, color: barColor, fontSize: '0.8rem' }}>
-                              {area.failureRate}% Failure Rate
-                            </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                              ({area.attemptCount} drills)
-                            </span>
-                            <span style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 600,
-                              color: area.trend === 'improving' ? 'var(--success)' : area.trend === 'regressing' ? 'var(--error)' : 'var(--text-muted)',
-                            }}>
-                              {area.trend === 'improving' ? '↑ Improving' : area.trend === 'regressing' ? '↓ Needs Work' : '→ Stable'}
+                            </div>
+                            <span className="badge badge-brand" style={{ fontSize: '0.66rem' }}>
+                              Band +0.5 Potential
                             </span>
                           </div>
+
+                          <div style={{ fontWeight: 650, fontSize: '0.94rem', color: 'var(--text-primary)', marginTop: '0.2rem' }}>
+                            {bn.title}
+                          </div>
+
+                          <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5, marginTop: '0.35rem' }}>
+                            {bn.description}
+                          </p>
                         </div>
 
-                        {/* Visual Failure Rate Bar */}
-                        <div style={{
-                          width: '100%',
-                          height: '7px',
-                          backgroundColor: 'rgba(0,0,0,0.06)',
-                          borderRadius: 'var(--radius-full)',
-                          overflow: 'hidden',
-                        }}>
+                        <div>
                           <div style={{
-                            width: `${area.failureRate}%`,
-                            height: '100%',
-                            backgroundColor: barColor,
-                            borderRadius: 'var(--radius-full)',
-                            transition: 'width 0.5s ease',
-                          }} />
+                            fontSize: '0.76rem',
+                            color: 'var(--brand-primary)',
+                            backgroundColor: 'var(--brand-surface)',
+                            padding: '0.45rem 0.65rem',
+                            borderRadius: 'var(--radius-sm)',
+                            fontWeight: 500,
+                            lineHeight: 1.4,
+                          }}>
+                            <strong>Examiner Tip:</strong> {bn.impact}
+                          </div>
+
+                          {onNavigate && (
+                            <button
+                              type="button"
+                              onClick={() => onNavigate(getDestinationTab(skill))}
+                              className="btn btn-secondary btn-sm"
+                              style={{
+                                marginTop: '0.65rem',
+                                width: '100%',
+                                justifyContent: 'center',
+                                gap: '0.4rem',
+                                fontSize: '0.8rem',
+                                fontWeight: 600,
+                                transition: 'transform 120ms ease-out',
+                              }}
+                            >
+                              <span>Practice {skill.charAt(0).toUpperCase() + skill.slice(1)} Drills</span>
+                              <ArrowRight size={13} />
+                            </button>
+                          )}
                         </div>
                       </div>
                     );
@@ -392,57 +489,227 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 </div>
               </div>
 
-              {/* Priority Adaptive Drills */}
-              <div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                  <Target size={14} color="var(--brand-primary)" />
-                  <span>AI Prescribed High-Yield Recovery Actions</span>
+              {/* Subskill Accuracy & Mastery Matrix */}
+              <div style={{
+                backgroundColor: 'var(--bg-surface)',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.35rem',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+                boxShadow: 'var(--shadow-sm)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                      <BarChart3 size={16} color="var(--brand-primary)" />
+                      <span style={{ fontSize: '0.86rem', fontWeight: 750, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        Subskill Accuracy & Mastery Matrix
+                      </span>
+                    </div>
+                    <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', margin: '0.2rem 0 0 0' }}>
+                      Real-time accuracy across IELTS question types. Jump directly into any drill to train.
+                    </p>
+                  </div>
+
+                  {/* Filter Pills */}
+                  <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+                    {(['all', 'reading', 'writing', 'speaking'] as const).map(tabKey => (
+                      <button
+                        key={tabKey}
+                        type="button"
+                        onClick={() => setSubskillFilter(tabKey)}
+                        style={{
+                          padding: '0.3rem 0.75rem',
+                          borderRadius: 'var(--radius-full)',
+                          fontSize: '0.74rem',
+                          fontWeight: 600,
+                          border: subskillFilter === tabKey ? '1px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
+                          backgroundColor: subskillFilter === tabKey ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                          color: subskillFilter === tabKey ? '#ffffff' : 'var(--text-secondary)',
+                          cursor: 'pointer',
+                          transition: 'all 150ms ease-out',
+                        }}
+                      >
+                        {tabKey === 'all' ? 'All Subskills' : tabKey.charAt(0).toUpperCase() + tabKey.slice(1)}
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {(aiCritique.strugglingAreas || [])
+                    .filter(area => {
+                      if (subskillFilter === 'all') return true;
+                      return getSkillFromSubskill(area.subskill) === subskillFilter;
+                    })
+                    .slice(0, 6)
+                    .map((area, idx) => {
+                      const masteryRate = Math.max(0, Math.min(100, 100 - area.failureRate));
+                      const isPriority = masteryRate < 50;
+                      const isActive = masteryRate >= 50 && masteryRate < 70;
+                      const statusLabel = isPriority ? 'Priority Focus' : isActive ? 'Active Practice' : 'Mastered';
+                      const statusColor = isPriority ? '#f43f5e' : isActive ? '#f59e0b' : '#10b981';
+                      const badgeClass = isPriority ? 'badge-error' : isActive ? 'badge-warning' : 'badge-success';
+                      const skill = getSkillFromSubskill(area.subskill);
+
+                      return (
+                        <div
+                          key={idx}
+                          style={{
+                            padding: '0.85rem 1rem',
+                            borderRadius: 'var(--radius-md)',
+                            backgroundColor: 'var(--bg-subtle)',
+                            border: '1px solid var(--border-subtle)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                            transition: 'background-color 0.15s ease',
+                          }}
+                        >
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              <span style={{
+                                fontSize: '0.68rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                color: 'var(--text-muted)',
+                                backgroundColor: 'var(--bg-surface)',
+                                padding: '0.15rem 0.45rem',
+                                borderRadius: 'var(--radius-sm)',
+                                border: '1px solid var(--border-subtle)',
+                              }}>
+                                {skill}
+                              </span>
+                              <strong style={{ color: 'var(--text-primary)', fontSize: '0.88rem' }}>
+                                {area.subskillLabel}
+                              </strong>
+                              <span className={`badge ${badgeClass}`} style={{ fontSize: '0.64rem' }}>
+                                {statusLabel}
+                              </span>
+                            </div>
+
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                              <span className="font-mono" style={{ fontWeight: 700, color: statusColor, fontSize: '0.82rem' }}>
+                                {masteryRate}% Mastery
+                              </span>
+                              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                                {area.attemptCount > 0 ? `(${area.attemptCount} drills)` : '(Baseline Estimate)'}
+                              </span>
+                              <span style={{
+                                fontSize: '0.72rem',
+                                fontWeight: 600,
+                                color: area.trend === 'improving' ? 'var(--success)' : area.trend === 'regressing' ? '#f43f5e' : 'var(--text-muted)',
+                              }}>
+                                {area.trend === 'improving' ? '↑ Improving' : area.trend === 'regressing' ? '↓ Needs Work' : '→ Stable'}
+                              </span>
+                              {onNavigate && (
+                                <button
+                                  type="button"
+                                  onClick={() => onNavigate(getDestinationTab(skill, area.subskill))}
+                                  className="btn btn-subtle btn-sm"
+                                  style={{
+                                    fontSize: '0.72rem',
+                                    padding: '0.2rem 0.55rem',
+                                    gap: '0.25rem',
+                                    color: 'var(--brand-primary)',
+                                    fontWeight: 600,
+                                  }}
+                                  title={`Practice ${area.subskillLabel}`}
+                                >
+                                  <span>Train Now</span>
+                                  <ChevronRight size={12} />
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Accuracy Bar */}
+                          <div style={{
+                            width: '100%',
+                            height: '6px',
+                            backgroundColor: 'rgba(0,0,0,0.06)',
+                            borderRadius: 'var(--radius-full)',
+                            overflow: 'hidden',
+                          }}>
+                            <div style={{
+                              width: `${masteryRate}%`,
+                              height: '100%',
+                              backgroundColor: statusColor,
+                              borderRadius: 'var(--radius-full)',
+                              transition: 'width 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
+                            }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+
+              {/* Recommended High-Yield Action Plan */}
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <Target size={16} color="var(--brand-primary)" />
+                    <span style={{ fontSize: '0.86rem', fontWeight: 750, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Recommended High-Yield Action Plan
+                    </span>
+                  </div>
+                  <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
+                    Curated by Senior AI Examiner
+                  </span>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem' }}>
                   {aiCritique.priorityDrills.map((drill, i) => (
                     <div
                       key={i}
                       style={{
-                        padding: '1rem',
+                        padding: '1.15rem',
                         borderRadius: 'var(--radius-md)',
                         backgroundColor: 'var(--bg-surface)',
                         border: '1px solid var(--border-default)',
                         display: 'flex',
                         flexDirection: 'column',
                         justifyContent: 'space-between',
-                        gap: '0.65rem',
+                        gap: '0.75rem',
+                        boxShadow: 'var(--shadow-sm)',
                       }}
                     >
                       <div>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 750, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                             {drill.subskillLabel}
                           </span>
                           <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
                             {drill.estimatedGain}
                           </span>
                         </div>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.4rem', lineHeight: 1.45 }}>
-                          <strong>Diagnosis:</strong> {drill.reason}
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.45rem', lineHeight: 1.45 }}>
+                          <strong>Key Focus:</strong> {drill.reason}
                         </p>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: '0.3rem', lineHeight: 1.45 }}>
-                          <strong>Prescription:</strong> {drill.action}
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-primary)', marginTop: '0.3rem', lineHeight: 1.45 }}>
+                          <strong>Action Plan:</strong> {drill.action}
                         </p>
                       </div>
 
                       {onNavigate && (
                         <button
-                          onClick={() => onNavigate('practice')}
-                          className="btn btn-secondary btn-sm"
+                          type="button"
+                          onClick={() => onNavigate(getDestinationTab(drill.subskill))}
+                          className="btn btn-primary btn-sm"
                           style={{
                             width: '100%',
                             justifyContent: 'center',
                             fontSize: '0.78rem',
-                            marginTop: '0.25rem',
+                            marginTop: '0.35rem',
                             gap: '0.35rem',
+                            fontWeight: 650,
+                            transition: 'transform 120ms ease-out',
                           }}
                         >
-                          <span>Launch Adaptive Drill</span>
+                          <span>Start Adaptive Drill</span>
                           <ArrowRight size={13} />
                         </button>
                       )}
@@ -451,37 +718,39 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 </div>
               </div>
 
-              {/* Temporal AI Progression & Band Trajectory Timeline (Stored in Turso DB) */}
+              {/* Temporal Band Trajectory & Cloud Snapshots */}
               <div style={{
                 backgroundColor: 'var(--bg-surface)',
-                borderRadius: 'var(--radius-md)',
-                padding: '1.25rem',
+                borderRadius: 'var(--radius-lg)',
+                padding: '1.35rem',
                 border: '1px solid var(--border-default)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.85rem',
+                boxShadow: 'var(--shadow-sm)',
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
                     <History size={16} color="var(--brand-primary)" />
-                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                      Temporal Trajectory & Historical Evolution (Stored in Turso DB)
+                    <span style={{ fontSize: '0.86rem', fontWeight: 750, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Learning Trajectory & Turso Cloud Snapshots
                     </span>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="badge badge-brand" style={{ fontSize: '0.7rem' }}>
-                      {critiqueHistory.length} Database Snapshots
+                    <span className="badge badge-brand" style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                      <Cloud size={11} />
+                      <span>{critiqueHistory.length} Cloud Snapshots</span>
                     </span>
                     {aiCritique.bandProgressionDelta !== undefined && (
                       <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
-                        {aiCritique.bandProgressionDelta >= 0 ? '+' : ''}{aiCritique.bandProgressionDelta.toFixed(1)} Band Trajectory
+                        {aiCritique.bandProgressionDelta >= 0 ? '+' : ''}{aiCritique.bandProgressionDelta.toFixed(1)} Band
                       </span>
                     )}
                   </div>
                 </div>
 
                 <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
-                  This timeline proves your AI critique dynamically evolves over time as you complete reading drills, essay submissions, and mock exams. Every snapshot is permanently saved in the Turso LibSQL database.
+                  Every mock exam attempt and AI analysis snapshot is encrypted and backed up to your Turso Cloud database, letting you track your steady rise across every session and device.
                 </p>
 
                 {/* Timeline Visual Nodes */}
@@ -496,13 +765,14 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                       <div
                         key={snap.id || i}
                         style={{
-                          padding: '0.85rem',
-                          borderRadius: 'var(--radius-sm)',
+                          padding: '0.9rem',
+                          borderRadius: 'var(--radius-md)',
                           backgroundColor: 'var(--bg-subtle)',
                           border: i === critiqueHistory.slice(-4).length - 1 ? '1px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
                           display: 'flex',
                           flexDirection: 'column',
                           gap: '0.35rem',
+                          transition: 'border-color 0.15s ease',
                         }}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

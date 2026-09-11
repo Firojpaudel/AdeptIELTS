@@ -775,8 +775,10 @@ function computeDeterministicExamCritique(
   if (readingBand < target) {
     bottlenecks.push({
       title: `${primaryWeakness.subskillLabel} & Distractor Traps`,
-      description: `Your failure rate on inference-heavy items (${primaryWeakness.subskillLabel}) is ${primaryWeakness.failureRate}%. You are frequently falling for plausible synonym traps instead of verifying complete syntactic alignment with the passage.`,
-      impact: `Restricts Reading to Band ${readingBand.toFixed(1)}, pulling overall average down by ${(target - readingBand).toFixed(1)} band.`,
+      description: attempts.length === 0
+        ? `Paragraph matching and inference questions are the highest-yield areas in Reading. Verifying line-level evidence before picking an answer will quickly elevate your score.`
+        : `Focusing on ${primaryWeakness.subskillLabel} will eliminate synonym traps. Double-checking sentence syntax against the passage gives immediate accuracy gains.`,
+      impact: `Unlocks Band ${(readingBand + 0.5).toFixed(1)} in Reading and accelerates your overall target progress.`,
       affectedSkill: 'reading',
     });
   }
@@ -785,11 +787,11 @@ function computeDeterministicExamCritique(
   const writingBand = latestMock?.writingBand ?? profile.skillBands?.writing ?? 5.5;
   if (writingBand < target) {
     bottlenecks.push({
-      title: 'Task 2 Development & Cohesive Lexical Range',
+      title: 'Task 2 Essay Blueprint & Cohesion',
       description: writings.length === 0
-        ? 'Insufficient academic essay submissions logged. Without timed 250-word Task 2 drills with thesis development, Task Response cannot reach Band 7.0.'
-        : `Analysis of your ${writings.length} essay submissions indicates occasional paragraph underdevelopment and repetitive transitions.`,
-      impact: `Caps Writing at Band ${writingBand.toFixed(1)}. Requires structured 4-paragraph academic layouts.`,
+        ? 'Completing your first timed 250-word Task 2 essay with a clear 4-paragraph structure will unlock detailed AI band scoring.'
+        : `Your ${writings.length} essay submissions show good development. Polishing cohesive transitions and specific examples will elevate your Task Response.`,
+      impact: `Guides your writing to Band ${(writingBand + 0.5).toFixed(1)}+ with structured thesis statements and topic sentences.`,
       affectedSkill: 'writing',
     });
   }
@@ -798,11 +800,11 @@ function computeDeterministicExamCritique(
   const speakingBand = latestMock?.speakingBand ?? profile.skillBands?.speaking ?? 6.0;
   if (speakingBand < target) {
     bottlenecks.push({
-      title: 'Part 2 Discourse Continuity & Fluent Expansion',
+      title: 'Part 2 Speech Continuity & Fluency',
       description: speakings.length === 0
-        ? 'No continuous 2-minute speaking monologues recorded in current profile.'
-        : 'Discourse pacing drops below 110 words/minute when addressing unfamiliar abstract topics.',
-      impact: `Speaking Band ${speakingBand.toFixed(1)} requires natural signposting without prolonged mid-sentence hesitations.`,
+        ? 'Try your first 2-minute speaking monologue! Using the Past-Present-Future structure keeps your speech naturally flowing without hesitation.'
+        : 'Smooth pacing and natural signposting phrases will eliminate mid-sentence pauses during abstract questions.',
+      impact: `Elevates Speaking to Band ${(speakingBand + 0.5).toFixed(1)}+ with steady pacing and natural discourse markers.`,
       affectedSkill: 'speaking',
     });
   }
@@ -812,24 +814,26 @@ function computeDeterministicExamCritique(
     {
       subskill: primaryWeakness.subskill,
       subskillLabel: primaryWeakness.subskillLabel.toUpperCase(),
-      reason: `Failure rate is currently ${primaryWeakness.failureRate}% across ${primaryWeakness.attemptCount} practice attempts.`,
-      action: 'Run 10 adaptive questions focusing exclusively on verbatim line verification before selecting an answer.',
+      reason: attempts.length === 0
+        ? 'High-yield foundation drill to calibrate your baseline accuracy.'
+        : `Focused reinforcement based on your ${primaryWeakness.attemptCount} recent practice items.`,
+      action: 'Run a quick 5-question drill focusing on verbatim line verification before selecting an answer.',
       estimatedGain: '+0.5 Band in Reading',
     },
     {
       subskill: 'task2_essay_structure',
       subskillLabel: 'TASK 2 ESSAY BLUEPRINT',
       reason: 'Task Response and Coherence & Cohesion account for 50% of your total writing score.',
-      action: 'Write one timed 40-minute essay focusing strictly on clear topic sentences and real-world supporting evidence.',
+      action: 'Practice drafting a clear thesis and 2 well-supported body paragraphs.',
       estimatedGain: '+0.5 Band in Writing',
     },
     {
       subskill: 'speaking_monologue_ppf',
       subskillLabel: 'PART 2 LONG TURN (PPF)',
-      reason: 'Candidates frequently freeze during the 2-minute individual monologue.',
-      action: 'Practice 2-minute cue card deliveries using the Past-Present-Future temporal roadmap.',
+      reason: 'Fluency and coherence are the easiest speaking criteria to boost with a structured roadmap.',
+      action: 'Practice a 2-minute cue card delivery using the Past-Present-Future chronological framework.',
       estimatedGain: '+0.5 Band in Speaking',
-    }
+    },
   ];
 
   const earliest = pastCritiques.length > 0 ? pastCritiques[0] : null;
@@ -845,12 +849,12 @@ function computeDeterministicExamCritique(
     bandProgressionDelta: delta,
     previousCritiqueDate: pastCritiques.length > 0 ? (pastCritiques[pastCritiques.length - 1].createdAt || pastCritiques[pastCritiques.length - 1].timestamp) : undefined,
     executiveSummary: pastCritiques.length > 0
-      ? `Temporal evaluation shows your estimated band is currently Band ${currentEst.toFixed(1)} (trajectory: ${delta >= 0 ? '+' : ''}${delta.toFixed(1)} band since initial diagnostic). Primary remaining bottleneck is ${bottlenecks[0]?.title || 'evidence scanning'}, which accounts for the majority of recent errors.`
-      : `Initial baseline evaluation places candidate at Band ${currentEst.toFixed(1)} against target Band ${target.toFixed(1)}. The primary score ceiling is governed by ${bottlenecks[0]?.title || 'reading question accuracy'}, where distractor options are prematurely chosen without verifying line-level citations.`,
+      ? `Great progress! Your estimated band trajectory is currently Band ${currentEst.toFixed(1)} (${delta >= 0 ? '+' : ''}${delta.toFixed(1)} band change). Your highest-yield growth area right now is ${primaryWeakness.subskillLabel} — mastering this will give you an immediate boost.`
+      : `Welcome to your IELTS preparation journey! You are currently starting at Band ${currentEst.toFixed(1)} aiming for Band ${target.toFixed(1)}. Focusing on ${primaryWeakness.subskillLabel} and academic essay structure will unlock the quickest score improvements.`,
     keyBottlenecks: bottlenecks.slice(0, 3),
     priorityDrills,
     strugglingAreas,
-    timelineEstimate: bandGap <= 0.5 ? '1 - 2 weeks of focused drills' : bandGap <= 1.0 ? '3 - 4 weeks of consistent 45-min daily study' : '6 - 8 weeks of comprehensive skills training',
+    timelineEstimate: bandGap <= 0.5 ? '1 - 2 weeks of targeted drills' : bandGap <= 1.0 ? '3 - 4 weeks of consistent 45-min daily study' : '6 - 8 weeks of structured skill training',
     timestamp: nowIso,
     createdAt: nowIso,
   };

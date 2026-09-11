@@ -1,4 +1,5 @@
 import { createClient, Client } from '@libsql/client/web';
+import { encryptVaultSecret, decryptVaultSecret } from './cryptoVault';
 
 export const TURSO_URL_KEY = 'adept_turso_db_url';
 export const TURSO_TOKEN_KEY = 'adept_turso_auth_token';
@@ -397,6 +398,9 @@ export async function saveTursoUserSettings(
   if (!client || !userId) return;
 
   try {
+    // Encrypt API key with Web Crypto AES-GCM before sending to Turso Cloud
+    const encryptedKey = settings.apiKey ? await encryptVaultSecret(settings.apiKey, userId) : '';
+
     await client.execute({
       sql: `INSERT OR REPLACE INTO user_settings (
         user_id, ai_provider, api_key, worker_url, token_saving_mode, updated_at
@@ -404,7 +408,7 @@ export async function saveTursoUserSettings(
       args: [
         userId,
         settings.provider || 'groq',
-        settings.apiKey || '',
+        encryptedKey,
         settings.workerUrl || '',
         settings.tokenSavingMode ? 1 : 0,
       ],
@@ -426,9 +430,11 @@ export async function loadTursoUserSettings(userId: string): Promise<any | null>
 
     if (res.rows.length > 0) {
       const row = res.rows[0];
+      // Decrypt stored AES-GCM encrypted key
+      const decryptedKey = row.api_key ? await decryptVaultSecret(String(row.api_key), userId) : '';
       return {
         provider: row.ai_provider,
-        apiKey: row.api_key || '',
+        apiKey: decryptedKey,
         workerUrl: row.worker_url || '',
         tokenSavingMode: Boolean(row.token_saving_mode),
       };
@@ -516,9 +522,10 @@ export async function fetchUserCompleteDataFromTurso(userId: string): Promise<{
     let settings = null;
     if (settingsRes.rows.length > 0) {
       const s = settingsRes.rows[0];
+      const decryptedKey = s.api_key ? await decryptVaultSecret(String(s.api_key), userId) : '';
       settings = {
         provider: s.ai_provider,
-        apiKey: s.api_key || '',
+        apiKey: decryptedKey,
         workerUrl: s.worker_url || '',
         tokenSavingMode: Boolean(s.token_saving_mode),
       };

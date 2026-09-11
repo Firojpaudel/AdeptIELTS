@@ -17,9 +17,11 @@ import {
   KeyRound,
   Check,
   RotateCcw,
+  Lock,
+  Cloud,
 } from 'lucide-react';
 import { LearnerProfile, AISettings } from '../../lib/types';
-import { saveLearnerProfile, saveAISettings, loadAISettings, resetAllData } from '../../lib/storage';
+import { saveLearnerProfile, saveAISettings, saveAISettingsAsync, loadAISettings, resetAllData } from '../../lib/storage';
 
 interface SettingsViewProps {
   profile: LearnerProfile;
@@ -33,16 +35,24 @@ export const SettingsView = ({
   const [profileState, setProfileState] = useState<LearnerProfile>(profile);
   const [aiSettings, setAiSettings] = useState<AISettings>(loadAISettings());
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [cloudSynced, setCloudSynced] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Key Visibility toggle for user's personal AI key
   const [showApiKey, setShowApiKey] = useState(false);
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    setIsSaving(true);
     saveLearnerProfile(profileState);
-    saveAISettings(aiSettings);
+    const syncRes = await saveAISettingsAsync(aiSettings, profileState.id);
     onProfileUpdated(profileState);
+    setIsSaving(false);
+    setCloudSynced(syncRes.syncedToTurso);
     setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3500);
+    setTimeout(() => {
+      setSavedSuccess(false);
+      setCloudSynced(false);
+    }, 4500);
   };
 
   const handleExportData = () => {
@@ -166,8 +176,14 @@ export const SettingsView = ({
         }}>
           <CheckCircle2 size={20} color="var(--brand-primary)" />
           <div>
-            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Settings Saved Successfully</div>
-            <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>Your candidate target band, study schedule, and AI engine preferences have been saved.</div>
+            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>
+              {cloudSynced ? 'Configuration Saved & Synced to Turso Cloud' : 'Settings Saved Successfully'}
+            </div>
+            <div style={{ fontSize: '0.8rem', opacity: 0.9 }}>
+              {cloudSynced
+                ? 'Your AI credentials were AES-256 encrypted in-browser and synced to Turso LibSQL Cloud. You can now access your keys on your phone and other devices!'
+                : 'Your candidate target band, study schedule, and AI engine preferences have been saved.'}
+            </div>
           </div>
         </div>
       )}
@@ -467,8 +483,19 @@ export const SettingsView = ({
                   <KeyRound size={15} color="var(--brand-primary)" />
                   <span>{aiSettings.provider.toUpperCase()} API Key:</span>
                 </label>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                  Stored in local browser storage only.
+                <span style={{
+                  fontSize: '0.74rem',
+                  color: 'var(--brand-primary)',
+                  backgroundColor: 'var(--brand-surface)',
+                  padding: '0.2rem 0.6rem',
+                  borderRadius: 'var(--radius-full)',
+                  fontWeight: 600,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.35rem',
+                }}>
+                  <Shield size={12} />
+                  <span>Turso Cloud Encrypted (AES-256)</span>
                 </span>
               </div>
 
@@ -508,6 +535,17 @@ export const SettingsView = ({
                 >
                   {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-muted)', flexWrap: 'wrap', gap: '0.4rem' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                  <Lock size={12} color="var(--success)" />
+                  <span>Encrypted client-side with AES-GCM before syncing to Turso Edge Database.</span>
+                </span>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', color: 'var(--brand-primary)', fontWeight: 500 }}>
+                  <Cloud size={12} />
+                  <span>Available on phone & all devices</span>
+                </span>
               </div>
 
               {/* Token-Saving Mode Switch */}
@@ -573,6 +611,7 @@ export const SettingsView = ({
         <button
           type="button"
           onClick={handleSave}
+          disabled={isSaving}
           className="btn btn-primary btn-lg"
           style={{
             padding: '0.85rem 2.25rem',
@@ -580,10 +619,11 @@ export const SettingsView = ({
             borderRadius: 'var(--radius-full)',
             fontSize: '0.95rem',
             fontWeight: 700,
+            transition: 'transform 150ms ease-out',
           }}
         >
           <Save size={16} />
-          <span>Save Configuration</span>
+          <span>{isSaving ? 'Encrypting & Syncing...' : 'Save Configuration'}</span>
         </button>
       </div>
 
