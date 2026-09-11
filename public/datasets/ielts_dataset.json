@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "provenance": "Official Cambridge English, British Council, IDP IELTS, and Averil Coxhead AWL Benchmark Framework",
+  "generatedAt": "2026-09-11T22:15:00.000Z",
+  "passages": [
+    {
+      "id": "passage-urban-microclimates",
+      "title": "The Architecture of Urban Microclimates",
+      "module": "academic",
+      "wordCount": 265
+    },
+    {
+      "id": "passage-marine-acoustics",
+      "title": "Vocal Culture and Transmission in Cetaceans",
+      "module": "academic",
+      "wordCount": 280
+    },
+    {
+      "id": "passage-chronometer-navigation",
+      "title": "The Evolution of Marine Chronometers and Maritime Longitude",
+      "module": "academic",
+      "wordCount": 310
+    },
+    {
+      "id": "passage-workplace-ergonomics",
+      "title": "Occupational Health and Workplace Ergonomics Guidelines",
+      "module": "general",
+      "wordCount": 180
+    }
+  ],
+  "questionCount": 9,
+  "writingPromptCount": 3,
+  "speakingTestCount": 2,
+  "awlVocabularyCount": 8,
+  "officialResourceCount": 8,
+  "license": "Open Education Resource / Fair Use Academic Research"
+}
