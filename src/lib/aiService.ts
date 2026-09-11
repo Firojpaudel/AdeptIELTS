@@ -94,11 +94,12 @@ export async function evaluateSpeakingTranscript(
   topic: string,
   prompt: string,
   transcript: string,
-  durationSeconds: number
+  durationSeconds: number,
+  part: number = 2
 ): Promise<SpeakingFeedback> {
   const settings = loadAISettings();
   const trimmed = transcript.trim();
-  const cacheKey = `speaking_${simpleHash(topic + '_' + prompt + '_' + trimmed)}`;
+  const cacheKey = `speaking_${part}_${simpleHash(topic + '_' + prompt + '_' + trimmed)}`;
 
   if (aiResponseCache.has(cacheKey)) {
     return aiResponseCache.get(cacheKey);
@@ -106,15 +107,15 @@ export async function evaluateSpeakingTranscript(
 
   try {
     if (settings.provider === 'groq' && settings.apiKey) {
-      const res = await callGroqSpeaking(topic, prompt, trimmed, durationSeconds, settings.apiKey);
+      const res = await callGroqSpeaking(topic, prompt, trimmed, durationSeconds, settings.apiKey, part);
       aiResponseCache.set(cacheKey, res);
       return res;
     } else if (settings.provider === 'openrouter' && settings.apiKey) {
-      const res = await callOpenRouterSpeaking(topic, prompt, trimmed, durationSeconds, settings.apiKey);
+      const res = await callOpenRouterSpeaking(topic, prompt, trimmed, durationSeconds, settings.apiKey, part);
       aiResponseCache.set(cacheKey, res);
       return res;
     } else if (settings.provider === 'gemini' && settings.apiKey) {
-      const res = await callGeminiSpeaking(topic, prompt, trimmed, durationSeconds, settings.apiKey);
+      const res = await callGeminiSpeaking(topic, prompt, trimmed, durationSeconds, settings.apiKey, part);
       aiResponseCache.set(cacheKey, res);
       return res;
     }
@@ -265,8 +266,16 @@ async function callGeminiWriting(prompt: string, essay: string, taskType: string
   return JSON.parse(text);
 }
 
-async function callGroqSpeaking(topic: string, prompt: string, transcript: string, durationSeconds: number, apiKey: string): Promise<SpeakingFeedback> {
-  const systemPrompt = `You are an IELTS speaking examiner. Evaluate the candidate's transcript for topic "${topic}".
+async function callGroqSpeaking(
+  topic: string,
+  prompt: string,
+  transcript: string,
+  durationSeconds: number,
+  apiKey: string,
+  part: number = 2
+): Promise<SpeakingFeedback> {
+  const systemPrompt = `You are a Senior IELTS speaking examiner evaluating Part ${part} of the speaking test.
+Evaluate the candidate's transcript for topic "${topic}".
 Return ONLY JSON:
 {
   "estimated_band": number,
@@ -286,7 +295,7 @@ Return ONLY JSON:
       model: 'llama-3.3-70b-versatile',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: `Prompt: ${prompt}\nDuration: ${durationSeconds}s\nTranscript:\n${transcript}` },
+        { role: 'user', content: `Part: ${part}\nPrompt: ${prompt}\nDuration: ${durationSeconds}s\nTranscript:\n${transcript}` },
       ],
       temperature: 0.2,
       response_format: { type: 'json_object' },
@@ -298,7 +307,14 @@ Return ONLY JSON:
   return JSON.parse(content);
 }
 
-async function callOpenRouterSpeaking(topic: string, prompt: string, transcript: string, durationSeconds: number, apiKey: string): Promise<SpeakingFeedback> {
+async function callOpenRouterSpeaking(
+  topic: string,
+  prompt: string,
+  transcript: string,
+  durationSeconds: number,
+  apiKey: string,
+  part: number = 2
+): Promise<SpeakingFeedback> {
   const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -308,7 +324,7 @@ async function callOpenRouterSpeaking(topic: string, prompt: string, transcript:
     body: JSON.stringify({
       model: 'meta-llama/llama-3.3-70b-instruct:free',
       messages: [
-        { role: 'user', content: `Evaluate IELTS speaking response as JSON: Topic: ${topic}, Prompt: ${prompt}, Duration: ${durationSeconds}s, Transcript: ${transcript}` },
+        { role: 'user', content: `Evaluate IELTS speaking Part ${part} response as JSON: Topic: ${topic}, Prompt: ${prompt}, Duration: ${durationSeconds}s, Transcript: ${transcript}` },
       ],
     }),
   });
@@ -318,9 +334,16 @@ async function callOpenRouterSpeaking(topic: string, prompt: string, transcript:
   return JSON.parse(content);
 }
 
-async function callGeminiSpeaking(topic: string, prompt: string, transcript: string, _durationSeconds: number, apiKey: string): Promise<SpeakingFeedback> {
+async function callGeminiSpeaking(
+  topic: string,
+  prompt: string,
+  transcript: string,
+  _durationSeconds: number,
+  apiKey: string,
+  part: number = 2
+): Promise<SpeakingFeedback> {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
-  const promptText = `Evaluate IELTS Speaking transcript as JSON: Topic: ${topic}, Prompt: ${prompt}, Transcript: ${transcript}`;
+  const promptText = `Evaluate IELTS Speaking Part ${part} transcript as JSON: Topic: ${topic}, Prompt: ${prompt}, Transcript: ${transcript}`;
 
   const res = await fetch(url, {
     method: 'POST',

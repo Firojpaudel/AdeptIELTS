@@ -1,4 +1,4 @@
-import { Question, Lesson, VocabularyCard, LearningResource, IELTSBook } from '../lib/types';
+import { Question, Lesson, VocabularyCard, LearningResource, IELTSBook, SpeakingPrompt } from '../lib/types';
 
 // ============================================================================
 // 1. AUTHENTIC IELTS READING PASSAGES & QUESTION SETS
@@ -286,13 +286,106 @@ Write at least 150 words. You do NOT need to write any addresses. Begin your let
 ];
 
 // ============================================================================
-// 3. AUTHENTIC IELTS SPEAKING INTERVIEW SESSIONS
+// 3. AUTHENTIC IELTS SPEAKING INTERVIEW SESSIONS (PARTS 1, 2, AND 3)
 // ============================================================================
 
-export const IELTS_SPEAKING_TESTS = [
+export const IELTS_SPEAKING_TESTS: SpeakingPrompt[] = [
+  // --------------------------------------------------------------------------
+  // PART 1: INTRODUCTION & INTERVIEW (Personal, Familiar Topics)
+  // --------------------------------------------------------------------------
+  {
+    id: 'spk-part1-hometown',
+    part: 1,
+    topic: 'Hometown & Local Life',
+    prompt: "Let's talk about your hometown and where you currently live.",
+    bulletPoints: [
+      'Where is your hometown situated, and what is the area known for?',
+      'What do you like most about living in your city or neighborhood?',
+      'Has your hometown undergone significant changes in recent years?',
+      'Would you prefer to live there in the future or move somewhere else?',
+    ],
+    prepSeconds: 0,
+    preparationSeconds: 0,
+    talkSeconds: 60,
+    speakingSeconds: 60,
+    suggestedPhrases: [
+      'I was born and raised in...',
+      'What strikes me most about the area is...',
+      'Over the past decade, there has been a noticeable influx of...',
+      'From an infrastructure standpoint...',
+    ],
+  },
+  {
+    id: 'spk-part1-studies-work',
+    part: 1,
+    topic: 'Studies, Career & Ambitions',
+    prompt: "Let's discuss your current work or academic specialization.",
+    bulletPoints: [
+      'Do you currently work, or are you enrolled as a student?',
+      'Why did you choose this specific discipline or career track?',
+      'What aspect of your daily professional or academic routine is most fulfilling?',
+      'What are your primary career objectives over the next three to five years?',
+    ],
+    prepSeconds: 0,
+    preparationSeconds: 0,
+    talkSeconds: 60,
+    speakingSeconds: 60,
+    suggestedPhrases: [
+      'Currently, I am pursuing a career in...',
+      'What initially drew me to this sector is...',
+      'A key takeaway from my daily tasks is...',
+      'Looking ahead towards my mid-term goals...',
+    ],
+  },
+  {
+    id: 'spk-part1-technology',
+    part: 1,
+    topic: 'Digital Habits & Mobile Tech',
+    prompt: "Let's talk about electronic gadgets and daily internet habits.",
+    bulletPoints: [
+      'What digital device or application do you rely on most on a daily basis?',
+      'How has online communication altered how you stay in touch with friends and family?',
+      'Do you think people spend an excessive amount of time looking at screens nowadays?',
+      'What emerging technology are you most enthusiastic about seeing develop?',
+    ],
+    prepSeconds: 0,
+    preparationSeconds: 0,
+    talkSeconds: 60,
+    speakingSeconds: 60,
+    suggestedPhrases: [
+      'I have to admit that I am practically glued to...',
+      'It has fundamentally revolutionized how we...',
+      'There are undeniable drawbacks regarding attention spans...',
+      'On the cutting edge of innovation...',
+    ],
+  },
+  {
+    id: 'spk-part1-weather',
+    part: 1,
+    topic: 'Weather, Climate & Seasons',
+    prompt: "Let's talk about the climate and seasons in your country.",
+    bulletPoints: [
+      'What kind of weather do you find most invigorating, and why?',
+      'Does inclement weather ever disrupt your commute or daily schedule?',
+      'Have you observed any shifts in seasonal weather patterns in your region recently?',
+    ],
+    prepSeconds: 0,
+    preparationSeconds: 0,
+    talkSeconds: 60,
+    speakingSeconds: 60,
+    suggestedPhrases: [
+      'I have always had a strong penchant for...',
+      'Inclement weather frequently wreaks havoc on...',
+      'There is widespread consensus that seasonal transitions have become...',
+    ],
+  },
+
+  // --------------------------------------------------------------------------
+  // PART 2: INDIVIDUAL LONG TURN (CUE CARD MONOLOGUE)
+  // --------------------------------------------------------------------------
   {
     id: 'spk-part2-urban-park',
-    part: 2 as const,
+    part: 2,
     topic: 'Urban Spaces and Public Parks',
     prompt: 'Describe a public park or green open space in your city that you enjoy visiting.',
     bulletPoints: [
@@ -310,10 +403,16 @@ export const IELTS_SPEAKING_TESTS = [
       'How does access to nature in densely populated cities influence public mental well-being?',
       'Should commercial activities like open-air markets and cafes be permitted inside nature sanctuaries?',
     ],
+    suggestedPhrases: [
+      'The open space I would like to highlight is situated in...',
+      'It boasts a wide array of amenities, ranging from...',
+      'Whenever I feel inundated by urban congestion, I tend to...',
+      'Ultimately, its paramount value stems from...',
+    ],
   },
   {
     id: 'spk-part2-technology',
-    part: 2 as const,
+    part: 2,
     topic: 'Technological Innovation & Daily Habits',
     prompt: 'Describe an electronic device or software application that significantly altered how you manage your daily responsibilities.',
     bulletPoints: [
@@ -329,6 +428,106 @@ export const IELTS_SPEAKING_TESTS = [
     part3FollowUps: [
       'In what ways has digital automation affected interpersonal communication in the workplace?',
       'Do you anticipate that future generations will depend excessively on automated assistance?',
+    ],
+    suggestedPhrases: [
+      'The piece of technology that comes immediately to mind is...',
+      'I first integrated it into my workflow roughly two years ago when...',
+      'What distinguishes it from rival tools is its ability to seamless execute...',
+      'On balance, while it has eradicated tedious tasks, it occasionally poses...',
+    ],
+  },
+  {
+    id: 'spk-part2-journey',
+    part: 2,
+    topic: 'A Memorable Journey or Cultural Visit',
+    prompt: 'Describe an impactful journey or visit to a place that broadened your perspective on another culture or way of life.',
+    bulletPoints: [
+      'Where you traveled and how you reached the destination',
+      'Who accompanied you and what activities you engaged in',
+      'What cultural traditions or unexpected customs you encountered',
+      'And explain why this particular journey left a lasting impression on your outlook.',
+    ],
+    prepSeconds: 60,
+    preparationSeconds: 60,
+    talkSeconds: 120,
+    speakingSeconds: 120,
+    part3FollowUps: [
+      'How has international travel changed compared to several decades ago?',
+      'Do you believe commercial tourism risks diluting authentic indigenous customs?',
+    ],
+    suggestedPhrases: [
+      'I would like to recount an excursion I embarked on to...',
+      'The journey required substantial logistical coordination because...',
+      'What proved truly eye-opening was encountering their communal custom of...',
+      'In retrospect, this experience dismantled several preconceived notions I previously held...',
+    ],
+  },
+
+  // --------------------------------------------------------------------------
+  // PART 3: TWO-WAY IN-DEPTH ANALYTICAL DISCUSSION
+  // --------------------------------------------------------------------------
+  {
+    id: 'spk-part3-urban-planning',
+    part: 3,
+    topic: 'Urban Planning, Ecology & Public Well-Being',
+    prompt: "Let's explore urban development, green infrastructure, and societal well-being in greater depth.",
+    bulletPoints: [
+      'Do municipal authorities invest sufficient capital in maintaining public recreational zones?',
+      'How does regular access to natural ecosystems influence cognitive and psychological health in crowded metropolises?',
+      'Should commercial enterprises like open-air markets and private cafes be permitted inside state-protected sanctuaries?',
+      'How might urban architecture evolve over the next three decades to counteract urban heat islands?',
+    ],
+    prepSeconds: 0,
+    preparationSeconds: 0,
+    talkSeconds: 120,
+    speakingSeconds: 120,
+    suggestedPhrases: [
+      'From a public policy and town-planning perspective...',
+      'Empirical research consistently underscores that exposure to greenery alleviates chronic stress...',
+      'A delicate equilibrium must be struck to avoid turning tranquil havens into commercial hubs...',
+      'Looking towards the coming decades, biophilic architecture will likely transition from luxury to necessity...',
+    ],
+  },
+  {
+    id: 'spk-part3-automation-ai',
+    part: 3,
+    topic: 'Artificial Intelligence, Automation & Future Workforce',
+    prompt: "Let's examine the socioeconomic implications of automated intelligence on modern society.",
+    bulletPoints: [
+      'In what ways has digital automation reshaped workplace communication and corporate hierarchies?',
+      'Do you anticipate that upcoming generations will suffer cognitive deficits from over-reliance on generative AI?',
+      'Should regulatory bodies enforce strict guardrails to prevent displacement of creative and analytical professionals?',
+      'How must foundational educational curricula pivot to cultivate irreplaceable human competencies?',
+    ],
+    prepSeconds: 0,
+    preparationSeconds: 0,
+    talkSeconds: 120,
+    speakingSeconds: 120,
+    suggestedPhrases: [
+      'It is undeniable that algorithmic automation has disrupted traditional occupational hierarchies...',
+      'While efficiency gains are indisputable, an over-dependence on synthetic tools risks eroding...',
+      'Governments inevitably face a profound dilemma between fostering competitive innovation and...',
+      'Educational paradigms must decisively pivot away from rote recall toward critical synthesis and emotional empathy...',
+    ],
+  },
+  {
+    id: 'spk-part3-globalization-heritage',
+    part: 3,
+    topic: 'Tourism, Globalization & Cultural Preservation',
+    prompt: "Let's discuss global mobility, cultural commodification, and historical conservation.",
+    bulletPoints: [
+      'What are the chief economic windfalls versus ecological liabilities associated with mass international tourism?',
+      'How can developing nations strike an equilibrium between tourism revenue and preserving fragile historic artifacts?',
+      'Does international travel genuinely foster intercultural empathy, or does it frequently reinforce superficial stereotypes?',
+    ],
+    prepSeconds: 0,
+    preparationSeconds: 0,
+    talkSeconds: 120,
+    speakingSeconds: 120,
+    suggestedPhrases: [
+      'Mass tourism functions essentially as a double-edged sword because...',
+      'Strict visitation quotas and targeted conservation surcharges are imperative to safeguard...',
+      'While direct cultural exposure has the potential to dismantle prejudices, unguided tourism often trivializes...',
     ],
   },
 ];

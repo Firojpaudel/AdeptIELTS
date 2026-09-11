@@ -131,6 +131,20 @@ export interface SpeakingFeedback {
   targeted_drills: string[];
 }
 
+export interface SpeakingPrompt {
+  id: string;
+  part: 1 | 2 | 3;
+  topic: string;
+  prompt: string;
+  bulletPoints?: string[];
+  prepSeconds: number;
+  preparationSeconds: number;
+  talkSeconds: number;
+  speakingSeconds: number;
+  part3FollowUps?: string[];
+  suggestedPhrases?: string[];
+}
+
 export interface SpeakingSession {
   id: string;
   part: 1 | 2 | 3;
