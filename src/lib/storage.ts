@@ -9,7 +9,13 @@ import {
   ExamScoreRecord,
 } from './types';
 import { supabase, getSupabaseClient } from './supabaseClient';
-import { getTursoClient, saveTursoUserSettings, fetchUserCompleteDataFromTurso } from './tursoClient';
+import {
+  getTursoClient,
+  saveTursoUserSettings,
+  fetchUserCompleteDataFromTurso,
+  saveTursoCritiqueSnapshot,
+  loadTursoCritiqueHistory,
+} from './tursoClient';
 
 const PROFILES_KEY = 'adept_ielts_profiles_list';
 const ACTIVE_PROFILE_ID_KEY = 'adept_ielts_active_profile_id';
@@ -669,4 +675,62 @@ export async function loadExamScores(profileId?: string): Promise<ExamScoreRecor
     }
   }
   return localScores;
+}
+
+// ============================================================================
+// TEMPORAL AI CRITIQUE HISTORY (SYNCED TO TURSO & LOCALSTORAGE)
+// ============================================================================
+
+export const AI_CRITIQUES_KEY = 'adept_ielts_ai_critiques';
+
+export async function saveCritiqueSnapshot(
+  critique: any,
+  profileId?: string
+): Promise<void> {
+  const pid = profileId || getActiveProfileId();
+  if (!pid) return;
+
+  try {
+    const key = getScopedKey(AI_CRITIQUES_KEY, pid);
+    const existing: any[] = JSON.parse(localStorage.getItem(key) || '[]');
+    // Filter out duplicates with same id
+    const filtered = existing.filter(c => c.id !== critique.id);
+    filtered.push(critique);
+    // Keep 30 most recent
+    const capped = filtered.slice(-30);
+    localStorage.setItem(key, JSON.stringify(capped));
+
+    // Save to Turso LibSQL database
+    await saveTursoCritiqueSnapshot(pid, critique);
+  } catch (e) {
+    console.error('Failed to save AI critique snapshot', e);
+  }
+}
+
+export async function loadCritiqueHistory(profileId?: string): Promise<any[]> {
+  const pid = profileId || getActiveProfileId();
+  if (!pid) return [];
+
+  const key = getScopedKey(AI_CRITIQUES_KEY, pid);
+  let localList: any[] = [];
+  try {
+    localList = JSON.parse(localStorage.getItem(key) || '[]');
+  } catch {}
+
+  try {
+    const remoteList = await loadTursoCritiqueHistory(pid);
+    if (remoteList && remoteList.length > 0) {
+      const byId = new Map<string, any>();
+      [...localList, ...remoteList].forEach(c => byId.set(c.id, c));
+      const merged = Array.from(byId.values()).sort(
+        (a, b) => new Date(a.createdAt || a.timestamp).getTime() - new Date(b.createdAt || b.timestamp).getTime()
+      );
+      localStorage.setItem(key, JSON.stringify(merged));
+      return merged;
+    }
+  } catch (e) {
+    console.warn('Could not fetch critique history from Turso; using local cache:', e);
+  }
+
+  return localList;
 }

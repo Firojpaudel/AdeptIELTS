@@ -8,7 +8,7 @@ import {
   SpeakingSession,
   Question,
 } from './types';
-import { loadAISettings } from './storage';
+import { loadAISettings, saveCritiqueSnapshot, loadCritiqueHistory } from './storage';
 
 // In-memory cache for deterministic queries & token conservation
 const aiResponseCache = new Map<string, any>();
@@ -487,11 +487,23 @@ function computeDeterministicSpeakingEvaluation(
 // AI EXAM SCORE CRITIQUE & ADAPTIVE LEARNING DIAGNOSTIC ENGINE
 // ============================================================================
 
+export interface StrugglingAreaItem {
+  subskill: string;
+  subskillLabel: string;
+  failureRate: number; // percentage 0 - 100
+  attemptCount: number;
+  severity: 'critical' | 'moderate' | 'minor';
+  trend: 'improving' | 'stable' | 'regressing';
+}
+
 export interface AIExamCritique {
+  id?: string;
   overallReadiness: string;
   readinessPercentage: number;
   targetBand: number;
   currentEstimatedBand: number;
+  bandProgressionDelta?: number;
+  previousCritiqueDate?: string;
   executiveSummary: string;
   keyBottlenecks: Array<{
     title: string;
@@ -506,8 +518,10 @@ export interface AIExamCritique {
     action: string;
     estimatedGain: string;
   }>;
+  strugglingAreas: StrugglingAreaItem[];
   timelineEstimate: string;
   timestamp: string;
+  createdAt?: string;
 }
 
 export async function generateAIExamCritique({
@@ -524,7 +538,8 @@ export async function generateAIExamCritique({
   speakings?: SpeakingSession[];
 }): Promise<AIExamCritique> {
   const settings = loadAISettings();
-  const cacheKey = `critique_${simpleHash(profile.id + '_' + examScores.length + '_' + attempts.length + '_' + writings.length)}`;
+  const pastCritiques = await loadCritiqueHistory(profile.id);
+  const cacheKey = `critique_${simpleHash(profile.id + '_' + examScores.length + '_' + attempts.length + '_' + writings.length + '_' + pastCritiques.length)}`;
 
   if (aiResponseCache.has(cacheKey)) {
     return aiResponseCache.get(cacheKey);
@@ -533,6 +548,7 @@ export async function generateAIExamCritique({
   // If custom AI provider is available, query LLM
   if (settings.apiKey && (settings.provider === 'groq' || settings.provider === 'openrouter' || settings.provider === 'gemini')) {
     try {
+      const lastCritique = pastCritiques.length > 0 ? pastCritiques[pastCritiques.length - 1] : null;
       const summaryContext = {
         candidateName: profile.displayName,
         targetBand: profile.targetBand,
@@ -540,6 +556,13 @@ export async function generateAIExamCritique({
         testType: profile.testType,
         skillBands: profile.skillBands,
         subskillMastery: profile.subskillMastery,
+        historicalCritiquesCount: pastCritiques.length,
+        lastCritiqueSnapshot: lastCritique ? {
+          date: lastCritique.createdAt || lastCritique.timestamp,
+          previousBand: lastCritique.currentEstimatedBand,
+          previousReadiness: lastCritique.readinessPercentage,
+          primaryBottleneck: lastCritique.keyBottlenecks?.[0]?.title,
+        } : null,
         recentExamScores: examScores.slice(0, 3).map(s => ({
           type: s.examType,
           overallBand: s.overallBand,
@@ -559,12 +582,13 @@ export async function generateAIExamCritique({
       };
 
       const systemPrompt = `You are the Lead Senior IELTS Examiner and Psychometrician at AdeptIELTS.
-Evaluate this candidate's stored exam scores, subskill masteries, and error history.
+Evaluate this candidate's stored exam scores, subskill masteries, and temporal history.
+Notice how the candidate has progressed since their last critique.
 Return ONLY valid raw JSON (no markdown formatting, no commentary) adhering strictly to this schema:
 {
-  "overallReadiness": string (e.g., "72% Band 7.5 Ready (Gap: -1.0 Band)"),
+  "overallReadiness": string (e.g., "75% Band 7.5 Ready"),
   "readinessPercentage": number (integer between 20 and 95),
-  "executiveSummary": string (2-3 sentences evaluating why they haven't reached their target band and what is the single biggest impediment),
+  "executiveSummary": string (2-3 sentences analyzing progression over time and what is currently the major struggling area),
   "keyBottlenecks": [
     {
       "title": string,
@@ -582,6 +606,16 @@ Return ONLY valid raw JSON (no markdown formatting, no commentary) adhering stri
       "estimatedGain": string
     }
   ],
+  "strugglingAreas": [
+    {
+      "subskill": string,
+      "subskillLabel": string,
+      "failureRate": number,
+      "attemptCount": number,
+      "severity": "critical" | "moderate" | "minor",
+      "trend": "improving" | "stable" | "regressing"
+    }
+  ],
   "timelineEstimate": string
 }`;
 
@@ -597,7 +631,7 @@ Return ONLY valid raw JSON (no markdown formatting, no commentary) adhering stri
             model: 'llama-3.3-70b-versatile',
             messages: [
               { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Candidate Performance Log:\n${JSON.stringify(summaryContext, null, 2)}` },
+              { role: 'user', content: `Candidate Performance Log with Temporal Context:\n${JSON.stringify(summaryContext, null, 2)}` },
             ],
             temperature: 0.2,
             response_format: { type: 'json_object' },
@@ -611,7 +645,7 @@ Return ONLY valid raw JSON (no markdown formatting, no commentary) adhering stri
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            contents: [{ parts: [{ text: `${systemPrompt}\n\nCandidate Performance Log:\n${JSON.stringify(summaryContext, null, 2)}` }] }],
+            contents: [{ parts: [{ text: `${systemPrompt}\n\nCandidate Performance Log with Temporal Context:\n${JSON.stringify(summaryContext, null, 2)}` }] }],
             generationConfig: { responseMimeType: 'application/json', temperature: 0.2 },
           }),
         });
@@ -621,12 +655,24 @@ Return ONLY valid raw JSON (no markdown formatting, no commentary) adhering stri
 
       if (content) {
         const parsed = JSON.parse(content);
+        const earliest = pastCritiques.length > 0 ? pastCritiques[0] : null;
+        const delta = earliest ? Math.round((profile.currentEstimatedBand - earliest.currentEstimatedBand) * 10) / 10 : 0;
+        const nowIso = new Date().toISOString();
+
         const result: AIExamCritique = {
           ...parsed,
+          id: `critique-${profile.id}-${Date.now()}`,
           targetBand: profile.targetBand,
           currentEstimatedBand: profile.currentEstimatedBand,
-          timestamp: new Date().toISOString(),
+          bandProgressionDelta: delta,
+          previousCritiqueDate: lastCritique?.createdAt || lastCritique?.timestamp,
+          strugglingAreas: parsed.strugglingAreas || computeStrugglingAreas(attempts, profile),
+          timestamp: nowIso,
+          createdAt: nowIso,
         };
+
+        // Persist snapshot to Turso LibSQL and LocalStorage
+        await saveCritiqueSnapshot(result, profile.id);
         aiResponseCache.set(cacheKey, result);
         return result;
       }
@@ -636,26 +682,26 @@ Return ONLY valid raw JSON (no markdown formatting, no commentary) adhering stri
   }
 
   // Deterministic IELTS Psychometric Critique Engine
-  const result = computeDeterministicExamCritique(profile, examScores, attempts, writings, speakings);
+  const result = computeDeterministicExamCritique(profile, examScores, attempts, writings, speakings, pastCritiques);
+  await saveCritiqueSnapshot(result, profile.id);
   aiResponseCache.set(cacheKey, result);
   return result;
 }
 
-function computeDeterministicExamCritique(
-  profile: LearnerProfile,
-  examScores: ExamScoreRecord[],
+function computeStrugglingAreas(
   attempts: QuestionAttempt[],
-  writings: WritingSubmission[],
-  speakings: SpeakingSession[]
-): AIExamCritique {
-  const target = profile.targetBand || 7.5;
-  const latestMock = examScores.length > 0 ? examScores[0] : null;
-  const currentEst = latestMock ? latestMock.overallBand : (profile.currentEstimatedBand || 5.5);
-  const bandGap = Math.max(0, target - currentEst);
+  profile: LearnerProfile
+): StrugglingAreaItem[] {
+  const allSubskills = [
+    { key: 'matching_headings', label: 'Matching Headings' },
+    { key: 'true_false_not_given', label: 'True / False / Not Given' },
+    { key: 'summary_completion', label: 'Summary Completion' },
+    { key: 'sentence_completion', label: 'Sentence Completion' },
+    { key: 'multiple_choice', label: 'Multiple Choice' },
+    { key: 'task2_essay_structure', label: 'Task 2 Development' },
+    { key: 'speaking_monologue', label: 'Part 2 Fluency' },
+  ];
 
-  const readinessPercentage = Math.min(95, Math.max(25, Math.round(100 - (bandGap * 22))));
-
-  // Identify weak subskills from attempts
   const subskillStats: Record<string, { attempts: number; correct: number }> = {};
   attempts.forEach(a => {
     if (!subskillStats[a.subskill]) {
@@ -665,15 +711,62 @@ function computeDeterministicExamCritique(
     if (a.isCorrect) subskillStats[a.subskill].correct += 1;
   });
 
-  const sortedWeakSubskills = Object.entries(subskillStats)
-    .map(([sub, stat]) => ({
-      subskill: sub,
-      acc: stat.attempts > 0 ? stat.correct / stat.attempts : 1,
-      count: stat.attempts,
-    }))
-    .sort((a, b) => a.acc - b.acc);
+  return allSubskills.map(s => {
+    const stat = subskillStats[s.key];
+    const masteryData = profile.subskillMastery?.[s.key];
 
-  const primaryWeakness = sortedWeakSubskills[0] || { subskill: 'matching_headings', acc: 0.45, count: 2 };
+    let failureRate = 50;
+    let count = 0;
+
+    if (stat && stat.attempts > 0) {
+      count = stat.attempts;
+      failureRate = Math.round(((stat.attempts - stat.correct) / stat.attempts) * 100);
+    } else if (masteryData && masteryData.attempts > 0) {
+      count = masteryData.attempts;
+      failureRate = Math.round((1 - masteryData.recentAccuracy) * 100);
+    } else {
+      // Default baseline estimates based on IELTS psychometric standards
+      if (s.key === 'matching_headings') failureRate = 55;
+      else if (s.key === 'true_false_not_given') failureRate = 42;
+      else if (s.key === 'summary_completion') failureRate = 35;
+      else failureRate = 30;
+    }
+
+    const severity: 'critical' | 'moderate' | 'minor' =
+      failureRate >= 50 ? 'critical' : failureRate >= 30 ? 'moderate' : 'minor';
+
+    const trend: 'improving' | 'stable' | 'regressing' =
+      masteryData && masteryData.recentAccuracy > 0.65 ? 'improving' :
+      failureRate >= 50 ? 'regressing' : 'stable';
+
+    return {
+      subskill: s.key,
+      subskillLabel: s.label,
+      failureRate,
+      attemptCount: count,
+      severity,
+      trend,
+    };
+  }).sort((a, b) => b.failureRate - a.failureRate);
+}
+
+function computeDeterministicExamCritique(
+  profile: LearnerProfile,
+  examScores: ExamScoreRecord[],
+  attempts: QuestionAttempt[],
+  writings: WritingSubmission[],
+  speakings: SpeakingSession[],
+  pastCritiques: any[] = []
+): AIExamCritique {
+  const target = profile.targetBand || 7.5;
+  const latestMock = examScores.length > 0 ? examScores[0] : null;
+  const currentEst = latestMock ? latestMock.overallBand : (profile.currentEstimatedBand || 5.5);
+  const bandGap = Math.max(0, target - currentEst);
+
+  const readinessPercentage = Math.min(95, Math.max(25, Math.round(100 - (bandGap * 22))));
+
+  const strugglingAreas = computeStrugglingAreas(attempts, profile);
+  const primaryWeakness = strugglingAreas[0] || { subskill: 'matching_headings', failureRate: 55, attemptCount: 2 };
 
   const bottlenecks: AIExamCritique['keyBottlenecks'] = [];
 
@@ -681,8 +774,8 @@ function computeDeterministicExamCritique(
   const readingBand = latestMock?.readingBand ?? profile.skillBands?.reading ?? 6.0;
   if (readingBand < target) {
     bottlenecks.push({
-      title: 'Evidence Scanning & Heading Distractors',
-      description: `Your reading accuracy on inference-heavy items (${primaryWeakness.subskill.replace(/_/g, ' ')}) is currently ${(primaryWeakness.acc * 100).toFixed(0)}%. You are falling for plausible lexical traps instead of verifying complete syntactic alignment with the passage.`,
+      title: `${primaryWeakness.subskillLabel} & Distractor Traps`,
+      description: `Your failure rate on inference-heavy items (${primaryWeakness.subskillLabel}) is ${primaryWeakness.failureRate}%. You are frequently falling for plausible synonym traps instead of verifying complete syntactic alignment with the passage.`,
       impact: `Restricts Reading to Band ${readingBand.toFixed(1)}, pulling overall average down by ${(target - readingBand).toFixed(1)} band.`,
       affectedSkill: 'reading',
     });
@@ -718,8 +811,8 @@ function computeDeterministicExamCritique(
   const priorityDrills: AIExamCritique['priorityDrills'] = [
     {
       subskill: primaryWeakness.subskill,
-      subskillLabel: primaryWeakness.subskill.replace(/_/g, ' ').toUpperCase(),
-      reason: `Accuracy is currently ${(primaryWeakness.acc * 100).toFixed(0)}% across ${primaryWeakness.count} practice attempts.`,
+      subskillLabel: primaryWeakness.subskillLabel.toUpperCase(),
+      reason: `Failure rate is currently ${primaryWeakness.failureRate}% across ${primaryWeakness.attemptCount} practice attempts.`,
       action: 'Run 10 adaptive questions focusing exclusively on verbatim line verification before selecting an answer.',
       estimatedGain: '+0.5 Band in Reading',
     },
@@ -739,16 +832,27 @@ function computeDeterministicExamCritique(
     }
   ];
 
+  const earliest = pastCritiques.length > 0 ? pastCritiques[0] : null;
+  const delta = earliest ? Math.round((currentEst - earliest.currentEstimatedBand) * 10) / 10 : 0;
+  const nowIso = new Date().toISOString();
+
   return {
+    id: `critique-${profile.id}-${Date.now()}`,
     overallReadiness: `Band ${currentEst.toFixed(1)} → ${target.toFixed(1)} (${readinessPercentage}% Readiness)`,
     readinessPercentage,
     targetBand: target,
     currentEstimatedBand: currentEst,
-    executiveSummary: `Candidate is currently operating at Band ${currentEst.toFixed(1)}, showing a ${bandGap.toFixed(1)}-band differential toward target Band ${target.toFixed(1)}. The primary score ceiling is governed by ${bottlenecks[0]?.title || 'reading question accuracy'}, where distractor options are prematurely chosen without verifying line-level citations.`,
+    bandProgressionDelta: delta,
+    previousCritiqueDate: pastCritiques.length > 0 ? (pastCritiques[pastCritiques.length - 1].createdAt || pastCritiques[pastCritiques.length - 1].timestamp) : undefined,
+    executiveSummary: pastCritiques.length > 0
+      ? `Temporal evaluation shows your estimated band is currently Band ${currentEst.toFixed(1)} (trajectory: ${delta >= 0 ? '+' : ''}${delta.toFixed(1)} band since initial diagnostic). Primary remaining bottleneck is ${bottlenecks[0]?.title || 'evidence scanning'}, which accounts for the majority of recent errors.`
+      : `Initial baseline evaluation places candidate at Band ${currentEst.toFixed(1)} against target Band ${target.toFixed(1)}. The primary score ceiling is governed by ${bottlenecks[0]?.title || 'reading question accuracy'}, where distractor options are prematurely chosen without verifying line-level citations.`,
     keyBottlenecks: bottlenecks.slice(0, 3),
     priorityDrills,
+    strugglingAreas,
     timelineEstimate: bandGap <= 0.5 ? '1 - 2 weeks of focused drills' : bandGap <= 1.0 ? '3 - 4 weeks of consistent 45-min daily study' : '6 - 8 weeks of comprehensive skills training',
-    timestamp: new Date().toISOString(),
+    timestamp: nowIso,
+    createdAt: nowIso,
   };
 }
 

@@ -190,6 +190,19 @@ export async function testTursoConnection(): Promise<{ success: boolean; message
         time_spent_seconds INTEGER,
         details TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );`,
+      `CREATE TABLE IF NOT EXISTS ai_critiques (
+        id TEXT PRIMARY KEY,
+        user_id TEXT,
+        target_band REAL,
+        current_estimated_band REAL,
+        readiness_percentage INTEGER,
+        executive_summary TEXT,
+        bottlenecks TEXT,
+        priority_drills TEXT,
+        struggling_areas TEXT,
+        timeline_estimate TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );`
     ], 'write');
 
@@ -515,5 +528,87 @@ export async function fetchUserCompleteDataFromTurso(userId: string): Promise<{
   } catch (err) {
     console.error('Failed to fetch user complete data from Turso', err);
     return { attempts: [], writings: [], speakings: [], scores: [], settings: null };
+  }
+}
+
+export async function saveTursoCritiqueSnapshot(
+  userId: string,
+  critique: {
+    id?: string;
+    targetBand: number;
+    currentEstimatedBand: number;
+    readinessPercentage: number;
+    executiveSummary: string;
+    keyBottlenecks?: any[];
+    priorityDrills?: any[];
+    strugglingAreas?: any[];
+    timelineEstimate?: string;
+    createdAt?: string;
+  }
+): Promise<void> {
+  const client = getTursoClient();
+  if (!client || !userId) return;
+
+  const id = critique.id || `critique-${userId}-${Date.now()}`;
+  const createdAt = critique.createdAt || new Date().toISOString();
+
+  try {
+    await client.execute({
+      sql: `INSERT OR REPLACE INTO ai_critiques (
+        id, user_id, target_band, current_estimated_band, readiness_percentage, executive_summary, bottlenecks, priority_drills, struggling_areas, timeline_estimate, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+      args: [
+        id,
+        userId,
+        critique.targetBand,
+        critique.currentEstimatedBand,
+        critique.readinessPercentage,
+        critique.executiveSummary,
+        JSON.stringify(critique.keyBottlenecks || []),
+        JSON.stringify(critique.priorityDrills || []),
+        JSON.stringify(critique.strugglingAreas || []),
+        critique.timelineEstimate || '',
+        createdAt,
+      ],
+    });
+
+    // Prune very old snapshots for this user keeping up to 30 most recent to prevent bloat
+    await client.execute({
+      sql: `DELETE FROM ai_critiques WHERE user_id = ? AND id NOT IN (
+        SELECT id FROM ai_critiques WHERE user_id = ? ORDER BY created_at DESC LIMIT 30
+      );`,
+      args: [userId, userId],
+    }).catch(() => {});
+  } catch (err) {
+    console.warn('Failed to save AI critique snapshot to Turso', err);
+  }
+}
+
+export async function loadTursoCritiqueHistory(userId: string): Promise<any[]> {
+  const client = getTursoClient();
+  if (!client || !userId) return [];
+
+  try {
+    const res = await client.execute({
+      sql: `SELECT * FROM ai_critiques WHERE user_id = ? ORDER BY created_at ASC;`,
+      args: [userId],
+    });
+
+    return res.rows.map(r => ({
+      id: String(r.id),
+      userId: String(r.user_id),
+      targetBand: Number(r.target_band),
+      currentEstimatedBand: Number(r.current_estimated_band),
+      readinessPercentage: Number(r.readiness_percentage),
+      executiveSummary: String(r.executive_summary),
+      keyBottlenecks: r.bottlenecks ? (typeof r.bottlenecks === 'string' ? JSON.parse(r.bottlenecks) : r.bottlenecks) : [],
+      priorityDrills: r.priority_drills ? (typeof r.priority_drills === 'string' ? JSON.parse(r.priority_drills) : r.priority_drills) : [],
+      strugglingAreas: r.struggling_areas ? (typeof r.struggling_areas === 'string' ? JSON.parse(r.struggling_areas) : r.struggling_areas) : [],
+      timelineEstimate: String(r.timeline_estimate || ''),
+      createdAt: String(r.created_at),
+    }));
+  } catch (err) {
+    console.warn('Failed to load AI critique history from Turso', err);
+    return [];
   }
 }

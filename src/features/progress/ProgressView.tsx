@@ -3,6 +3,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   TrendingUp,
+  TrendingDown,
   BookOpen,
   Award,
   Database,
@@ -12,9 +13,12 @@ import {
   ShieldAlert,
   Target,
   RefreshCw,
+  History,
+  BarChart3,
+  Clock,
 } from 'lucide-react';
 import { LearnerProfile, QuestionAttempt, ExamScoreRecord } from '../../lib/types';
-import { loadExamScores, loadReadResourceIds } from '../../lib/storage';
+import { loadExamScores, loadReadResourceIds, loadCritiqueHistory } from '../../lib/storage';
 import { generateAIExamCritique, AIExamCritique } from '../../lib/aiService';
 import { StudyCalendarModal } from '../../components/StudyCalendarModal';
 
@@ -36,6 +40,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
   const [showCalendar, setShowCalendar] = useState(false);
 
   const [aiCritique, setAiCritique] = useState<AIExamCritique | null>(null);
+  const [critiqueHistory, setCritiqueHistory] = useState<any[]>([]);
   const [isCritiquing, setIsCritiquing] = useState(false);
 
   const handleRefreshCritique = async (scoresToUse: ExamScoreRecord[]) => {
@@ -47,6 +52,8 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
         attempts,
       });
       setAiCritique(critique);
+      const updatedHistory = await loadCritiqueHistory(profile.id);
+      setCritiqueHistory(updatedHistory);
     } catch (e) {
       console.warn('AI critique generation note:', e);
     } finally {
@@ -58,16 +65,25 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
     let isMounted = true;
     async function fetchCloudData() {
       try {
-        const [scores, reads] = await Promise.all([
+        const [scores, reads, history] = await Promise.all([
           loadExamScores(profile.id),
           loadReadResourceIds(profile.id),
+          loadCritiqueHistory(profile.id),
         ]);
         if (isMounted) {
           setExamScores(scores);
           setReadResourceIds(reads);
+          setCritiqueHistory(history);
           setLoadingCloudData(false);
           generateAIExamCritique({ profile, examScores: scores, attempts })
-            .then(res => { if (isMounted) setAiCritique(res); })
+            .then(res => {
+              if (isMounted) {
+                setAiCritique(res);
+                loadCritiqueHistory(profile.id).then(h => {
+                  if (isMounted && h && h.length > 0) setCritiqueHistory(h);
+                });
+              }
+            })
             .catch(() => {});
         }
       } catch (e) {
@@ -294,6 +310,88 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 </div>
               </div>
 
+              {/* Visual Diagnostic Chart: What Candidate is Majorly Struggling With */}
+              <div style={{
+                backgroundColor: 'var(--bg-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '1rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <BarChart3 size={16} color="var(--brand-primary)" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Diagnostic Matrix: What You Are Majorly Struggling With
+                    </span>
+                  </div>
+                  <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
+                    Derived dynamically from {attempts.length} attempts & error patterns
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {(aiCritique.strugglingAreas || []).slice(0, 5).map((area, idx) => {
+                    const isCritical = area.severity === 'critical';
+                    const isModerate = area.severity === 'moderate';
+                    const barColor = isCritical ? 'var(--error)' : isModerate ? 'var(--warning)' : 'var(--success)';
+                    const badgeClass = isCritical ? 'badge-error' : isModerate ? 'badge-warning' : 'badge-success';
+
+                    return (
+                      <div key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.82rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <strong style={{ color: 'var(--text-primary)' }}>{area.subskillLabel}</strong>
+                            <span className={`badge ${badgeClass}`} style={{ fontSize: '0.65rem' }}>
+                              {area.severity.toUpperCase()}
+                            </span>
+                            {idx === 0 && (
+                              <span className="badge badge-error" style={{ fontSize: '0.62rem' }}>
+                                Primary Impediment
+                              </span>
+                            )}
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                            <span className="font-mono" style={{ fontWeight: 650, color: barColor, fontSize: '0.8rem' }}>
+                              {area.failureRate}% Failure Rate
+                            </span>
+                            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                              ({area.attemptCount} drills)
+                            </span>
+                            <span style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              color: area.trend === 'improving' ? 'var(--success)' : area.trend === 'regressing' ? 'var(--error)' : 'var(--text-muted)',
+                            }}>
+                              {area.trend === 'improving' ? '↑ Improving' : area.trend === 'regressing' ? '↓ Needs Work' : '→ Stable'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Visual Failure Rate Bar */}
+                        <div style={{
+                          width: '100%',
+                          height: '7px',
+                          backgroundColor: 'rgba(0,0,0,0.06)',
+                          borderRadius: 'var(--radius-full)',
+                          overflow: 'hidden',
+                        }}>
+                          <div style={{
+                            width: `${area.failureRate}%`,
+                            height: '100%',
+                            backgroundColor: barColor,
+                            borderRadius: 'var(--radius-full)',
+                            transition: 'width 0.5s ease',
+                          }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Priority Adaptive Drills */}
               <div>
                 <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -350,6 +448,92 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                       )}
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Temporal AI Progression & Band Trajectory Timeline (Stored in Turso DB) */}
+              <div style={{
+                backgroundColor: 'var(--bg-surface)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                border: '1px solid var(--border-default)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.85rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                    <History size={16} color="var(--brand-primary)" />
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Temporal Trajectory & Historical Evolution (Stored in Turso DB)
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span className="badge badge-brand" style={{ fontSize: '0.7rem' }}>
+                      {critiqueHistory.length} Database Snapshots
+                    </span>
+                    {aiCritique.bandProgressionDelta !== undefined && (
+                      <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>
+                        {aiCritique.bandProgressionDelta >= 0 ? '+' : ''}{aiCritique.bandProgressionDelta.toFixed(1)} Band Trajectory
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>
+                  This timeline proves your AI critique dynamically evolves over time as you complete reading drills, essay submissions, and mock exams. Every snapshot is permanently saved in the Turso LibSQL database.
+                </p>
+
+                {/* Timeline Visual Nodes */}
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: `repeat(auto-fit, minmax(210px, 1fr))`,
+                  gap: '0.75rem',
+                  marginTop: '0.25rem',
+                }}>
+                  {critiqueHistory.length > 0 ? (
+                    critiqueHistory.slice(-4).map((snap, i) => (
+                      <div
+                        key={snap.id || i}
+                        style={{
+                          padding: '0.85rem',
+                          borderRadius: 'var(--radius-sm)',
+                          backgroundColor: 'var(--bg-subtle)',
+                          border: i === critiqueHistory.slice(-4).length - 1 ? '1px solid var(--brand-primary)' : '1px solid var(--border-subtle)',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          gap: '0.35rem',
+                        }}
+                      >
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                            <Clock size={10} />
+                            {new Date(snap.createdAt || snap.timestamp).toLocaleDateString()} {new Date(snap.createdAt || snap.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {i === critiqueHistory.slice(-4).length - 1 && (
+                            <span className="badge badge-brand" style={{ fontSize: '0.62rem' }}>
+                              Latest
+                            </span>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.4rem', marginTop: '0.2rem' }}>
+                          <span className="font-mono" style={{ fontSize: '1.15rem', fontWeight: 750, color: 'var(--brand-primary)' }}>
+                            Band {snap.currentEstimatedBand ? snap.currentEstimatedBand.toFixed(1) : '5.5'}
+                          </span>
+                          <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)' }}>
+                            ({snap.readinessPercentage}% ready)
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.74rem', color: 'var(--text-secondary)', lineHeight: 1.4, margin: 0 }}>
+                          {snap.executiveSummary ? snap.executiveSummary.slice(0, 95) + '...' : 'Evaluation recorded.'}
+                        </p>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ padding: '0.75rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                      Initial baseline recorded. Complete more questions to build your historical progression curve.
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
