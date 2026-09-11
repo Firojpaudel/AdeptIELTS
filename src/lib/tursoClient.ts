@@ -93,6 +93,21 @@ export async function testTursoConnection(): Promise<{ success: boolean; message
 
     // 2. Automatically provision tables if not present
     await client.batch([
+      `CREATE TABLE IF NOT EXISTS users (
+        id TEXT PRIMARY KEY,
+        email TEXT UNIQUE,
+        password_hash TEXT,
+        display_name TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );`,
+      `CREATE TABLE IF NOT EXISTS user_settings (
+        user_id TEXT PRIMARY KEY,
+        ai_provider TEXT,
+        api_key TEXT,
+        worker_url TEXT,
+        token_saving_mode INTEGER,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );`,
       `CREATE TABLE IF NOT EXISTS learner_profiles (
         id TEXT PRIMARY KEY,
         display_name TEXT,
@@ -187,5 +202,318 @@ export async function testTursoConnection(): Promise<{ success: boolean; message
       success: false,
       message: err?.message || 'Failed to connect to Turso database. Please verify URL and Auth Token.',
     };
+  }
+}
+
+// -------------------------------------------------------------
+// Authentication & User Data Hydration via Turso
+// -------------------------------------------------------------
+
+export async function hashPassword(password: string): Promise<string> {
+  const msgBuffer = new TextEncoder().encode(password);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+export async function registerTursoAccount(
+  email: string,
+  pass: string,
+  displayName: string,
+  targetBand: number = 7.5,
+  testType: 'academic' | 'general' = 'academic'
+): Promise<{ success: boolean; error?: string; profile?: any; userId?: string }> {
+  const client = getTursoClient();
+  if (!client) {
+    return { success: false, error: 'Turso database is not connected.' };
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanName = displayName.trim();
+
+  try {
+    // 1. Check if email exists
+    const checkRes = await client.execute({
+      sql: 'SELECT id FROM users WHERE email = ? LIMIT 1;',
+      args: [cleanEmail],
+    });
+
+    if (checkRes.rows.length > 0) {
+      return { success: false, error: 'An account with this email address already exists.' };
+    }
+
+    // 2. Hash password
+    const passwordHash = await hashPassword(pass);
+    const userId = `user-${Date.now()}`;
+
+    // 3. Create user & profile in atomic batch
+    const profile = {
+      id: userId,
+      displayName: cleanName,
+      avatar: cleanName.slice(0, 2).toUpperCase(),
+      targetBand,
+      currentEstimatedBand: 5.5,
+      testType,
+      examDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      availableDailyMinutes: 45,
+      skillBands: { reading: 5.5, listening: 6.0, writing: 5.0, speaking: 5.5 },
+      subskillMastery: {},
+      streak: 0,
+      lastActiveDate: new Date().toISOString().split('T')[0],
+      totalStudyMinutes: 0,
+      onboardingCompleted: true,
+    };
+
+    await client.batch([
+      {
+        sql: 'INSERT INTO users (id, email, password_hash, display_name) VALUES (?, ?, ?, ?);',
+        args: [userId, cleanEmail, passwordHash, cleanName],
+      },
+      {
+        sql: `INSERT INTO learner_profiles (
+          id, display_name, target_band, current_estimated_band, test_type, exam_date, available_daily_minutes, skill_bands, subskill_mastery, streak
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`,
+        args: [
+          userId,
+          cleanName,
+          targetBand,
+          5.5,
+          testType,
+          profile.examDate,
+          45,
+          JSON.stringify(profile.skillBands),
+          JSON.stringify({}),
+          0,
+        ],
+      }
+    ], 'write');
+
+    return { success: true, userId, profile };
+  } catch (err: any) {
+    console.error('Turso registration error', err);
+    return { success: false, error: err?.message || 'Registration failed on database.' };
+  }
+}
+
+export async function loginTursoAccount(
+  email: string,
+  pass: string
+): Promise<{ success: boolean; error?: string; profile?: any; userId?: string }> {
+  const client = getTursoClient();
+  if (!client) {
+    return { success: false, error: 'Turso database is not connected.' };
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+
+  try {
+    const passwordHash = await hashPassword(pass);
+
+    const userRes = await client.execute({
+      sql: 'SELECT id, email, password_hash, display_name FROM users WHERE email = ? LIMIT 1;',
+      args: [cleanEmail],
+    });
+
+    if (userRes.rows.length === 0) {
+      return { success: false, error: 'No account found with this email address.' };
+    }
+
+    const userRow = userRes.rows[0];
+    if (userRow.password_hash !== passwordHash) {
+      return { success: false, error: 'Incorrect password entered.' };
+    }
+
+    const userId = String(userRow.id);
+
+    // Fetch corresponding profile
+    const profileRes = await client.execute({
+      sql: 'SELECT * FROM learner_profiles WHERE id = ? LIMIT 1;',
+      args: [userId],
+    });
+
+    let profile: any = null;
+    if (profileRes.rows.length > 0) {
+      const p = profileRes.rows[0];
+      profile = {
+        id: String(p.id),
+        displayName: String(p.display_name || userRow.display_name),
+        avatar: String(p.display_name || userRow.display_name).slice(0, 2).toUpperCase(),
+        targetBand: Number(p.target_band) || 7.5,
+        currentEstimatedBand: Number(p.current_estimated_band) || 5.5,
+        testType: (p.test_type as any) || 'academic',
+        examDate: String(p.exam_date || ''),
+        availableDailyMinutes: Number(p.available_daily_minutes) || 45,
+        skillBands: typeof p.skill_bands === 'string' ? JSON.parse(p.skill_bands) : { reading: 5.5, listening: 6.0, writing: 5.0, speaking: 5.5 },
+        subskillMastery: typeof p.subskill_mastery === 'string' ? JSON.parse(p.subskill_mastery) : {},
+        streak: Number(p.streak) || 0,
+        lastActiveDate: new Date().toISOString().split('T')[0],
+        totalStudyMinutes: 0,
+        onboardingCompleted: true,
+      };
+    } else {
+      profile = {
+        id: userId,
+        displayName: String(userRow.display_name),
+        avatar: String(userRow.display_name).slice(0, 2).toUpperCase(),
+        targetBand: 7.5,
+        currentEstimatedBand: 5.5,
+        testType: 'academic',
+        examDate: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        availableDailyMinutes: 45,
+        skillBands: { reading: 5.5, listening: 6.0, writing: 5.0, speaking: 5.5 },
+        subskillMastery: {},
+        streak: 0,
+        lastActiveDate: new Date().toISOString().split('T')[0],
+        totalStudyMinutes: 0,
+        onboardingCompleted: true,
+      };
+    }
+
+    return { success: true, userId, profile };
+  } catch (err: any) {
+    console.error('Turso login error', err);
+    return { success: false, error: err?.message || 'Login failed.' };
+  }
+}
+
+export async function saveTursoUserSettings(
+  userId: string,
+  settings: { provider: string; apiKey?: string; workerUrl?: string; tokenSavingMode?: boolean }
+): Promise<void> {
+  const client = getTursoClient();
+  if (!client || !userId) return;
+
+  try {
+    await client.execute({
+      sql: `INSERT OR REPLACE INTO user_settings (
+        user_id, ai_provider, api_key, worker_url, token_saving_mode, updated_at
+      ) VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP);`,
+      args: [
+        userId,
+        settings.provider || 'groq',
+        settings.apiKey || '',
+        settings.workerUrl || '',
+        settings.tokenSavingMode ? 1 : 0,
+      ],
+    });
+  } catch (err) {
+    console.warn('Turso user_settings sync error', err);
+  }
+}
+
+export async function loadTursoUserSettings(userId: string): Promise<any | null> {
+  const client = getTursoClient();
+  if (!client || !userId) return null;
+
+  try {
+    const res = await client.execute({
+      sql: 'SELECT ai_provider, api_key, worker_url, token_saving_mode FROM user_settings WHERE user_id = ? LIMIT 1;',
+      args: [userId],
+    });
+
+    if (res.rows.length > 0) {
+      const row = res.rows[0];
+      return {
+        provider: row.ai_provider,
+        apiKey: row.api_key || '',
+        workerUrl: row.worker_url || '',
+        tokenSavingMode: Boolean(row.token_saving_mode),
+      };
+    }
+    return null;
+  } catch (err) {
+    console.warn('Turso load user_settings error', err);
+    return null;
+  }
+}
+
+export async function fetchUserCompleteDataFromTurso(userId: string): Promise<{
+  attempts: any[];
+  writings: any[];
+  speakings: any[];
+  scores: any[];
+  settings: any | null;
+}> {
+  const client = getTursoClient();
+  if (!client || !userId) {
+    return { attempts: [], writings: [], speakings: [], scores: [], settings: null };
+  }
+
+  try {
+    const [attemptsRes, writingsRes, speakingsRes, scoresRes, settingsRes] = await Promise.all([
+      client.execute({ sql: 'SELECT * FROM question_attempts WHERE user_id = ? ORDER BY created_at ASC;', args: [userId] }),
+      client.execute({ sql: 'SELECT * FROM writing_submissions WHERE user_id = ? ORDER BY created_at ASC;', args: [userId] }),
+      client.execute({ sql: 'SELECT * FROM speaking_sessions WHERE user_id = ? ORDER BY created_at ASC;', args: [userId] }),
+      client.execute({ sql: 'SELECT * FROM exam_scores WHERE user_id = ? ORDER BY created_at ASC;', args: [userId] }),
+      client.execute({ sql: 'SELECT * FROM user_settings WHERE user_id = ? LIMIT 1;', args: [userId] }),
+    ]);
+
+    const attempts = attemptsRes.rows.map(r => ({
+      id: String(r.id),
+      questionId: String(r.question_id),
+      skill: String(r.skill) as any,
+      subskill: String(r.subskill),
+      userAnswer: String(r.user_answer),
+      isCorrect: Boolean(r.is_correct),
+      timeSpentSeconds: Number(r.time_spent_seconds) || 45,
+      confidenceRating: (r.confidence_rating as any) || 'medium',
+      timestamp: String(r.created_at),
+    }));
+
+    const writings = writingsRes.rows.map(r => ({
+      id: String(r.id),
+      taskType: (r.task_type as any) || 'task2',
+      promptTitle: String(r.prompt_title || ''),
+      promptText: String(r.prompt_text || ''),
+      essayText: String(r.essay_text || ''),
+      wordCount: Number(r.word_count) || 0,
+      timeSpentSeconds: Number(r.time_spent_seconds) || 1200,
+      timestamp: String(r.created_at),
+      feedback: r.feedback ? (typeof r.feedback === 'string' ? JSON.parse(r.feedback) : r.feedback) : undefined,
+    }));
+
+    const speakings = speakingsRes.rows.map(r => ({
+      id: String(r.id),
+      part: Number(r.part) || 1,
+      topic: String(r.topic || ''),
+      prompt: String(r.prompt || ''),
+      bulletPoints: r.bullet_points ? (typeof r.bullet_points === 'string' ? JSON.parse(r.bullet_points) : r.bullet_points) : undefined,
+      transcript: String(r.transcript || ''),
+      durationSeconds: Number(r.duration_seconds) || 60,
+      timestamp: String(r.created_at),
+      feedback: r.feedback ? (typeof r.feedback === 'string' ? JSON.parse(r.feedback) : r.feedback) : undefined,
+    }));
+
+    const scores = scoresRes.rows.map(r => ({
+      id: String(r.id),
+      userId: String(r.user_id),
+      examType: (r.exam_type as any) || 'academic',
+      overallBand: Number(r.overall_band) || 6.5,
+      readingBand: Number(r.reading_band) || 6.5,
+      writingBand: Number(r.writing_band) || 6.5,
+      listeningBand: Number(r.listening_band) || 6.5,
+      speakingBand: Number(r.speaking_band) || 6.5,
+      rawScore: Number(r.raw_score) || 0,
+      totalQuestions: Number(r.total_questions) || 40,
+      timeSpentSeconds: Number(r.time_spent_seconds) || 3600,
+      details: r.details ? (typeof r.details === 'string' ? JSON.parse(r.details) : r.details) : undefined,
+      createdAt: String(r.created_at),
+    }));
+
+    let settings = null;
+    if (settingsRes.rows.length > 0) {
+      const s = settingsRes.rows[0];
+      settings = {
+        provider: s.ai_provider,
+        apiKey: s.api_key || '',
+        workerUrl: s.worker_url || '',
+        tokenSavingMode: Boolean(s.token_saving_mode),
+      };
+    }
+
+    return { attempts, writings, speakings, scores, settings };
+  } catch (err) {
+    console.error('Failed to fetch user complete data from Turso', err);
+    return { attempts: [], writings: [], speakings: [], scores: [], settings: null };
   }
 }

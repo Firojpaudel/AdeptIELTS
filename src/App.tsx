@@ -17,6 +17,7 @@ import {
   loadVocabCards,
   saveVocabCards,
   setActiveProfileId,
+  hydrateUserFromTurso,
 } from './lib/storage';
 import { recalculateAndSaveStreak } from './lib/studyTracker';
 import { IELTS_VOCABULARY } from './data/ieltsDataset';
@@ -101,6 +102,11 @@ export const App: React.FC = () => {
       if (metrics.currentStreak !== profile.streak) {
         setProfile(prev => prev ? { ...prev, streak: metrics.currentStreak } : null);
       }
+      hydrateUserFromTurso(profile.id).then(hydrated => {
+        if (hydrated.attempts && hydrated.attempts.length > 0) {
+          setAttempts(loadQuestionAttempts(profile.id));
+        }
+      }).catch(err => console.warn('Turso mount hydration note:', err));
     }
   }, [profile?.id]);
 
@@ -236,6 +242,7 @@ export const App: React.FC = () => {
             <ProgressView
               profile={profile}
               attempts={attempts}
+              onNavigate={setCurrentTab}
             />
           ) : (
             <CandidateAuthGate

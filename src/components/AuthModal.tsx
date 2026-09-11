@@ -11,6 +11,7 @@ import {
   ArrowRight,
   UserPlus,
   LogIn,
+  Database,
 } from 'lucide-react';
 import { LearnerProfile } from '../lib/types';
 import {
@@ -18,8 +19,10 @@ import {
   setActiveProfileId,
   createNewProfile,
   saveLearnerProfile,
+  hydrateUserFromTurso,
 } from '../lib/storage';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabaseClient';
+import { registerTursoAccount, loginTursoAccount, isTursoConfigured } from '../lib/tursoClient';
 
 export interface AuthModalProps {
   isOpen: boolean;
@@ -60,6 +63,7 @@ export const AuthModal = ({
   const existingProfiles = loadAllProfiles();
   const supabase = getSupabaseClient();
   const hasCloud = isSupabaseConfigured();
+  const hasTurso = isTursoConfigured();
 
   const handleSwitchToExisting = (p: LearnerProfile) => {
     setActiveProfileId(p.id);
@@ -83,7 +87,22 @@ export const AuthModal = ({
           throw new Error('Please enter your full candidate name.');
         }
 
-        // If Supabase is active, register in Supabase Auth
+        // 1. Primary: Turso LibSQL Cloud Edge Database (Zero-config 9GB storage)
+        if (hasTurso && email && password) {
+          const res = await registerTursoAccount(email, password, displayName.trim(), targetBand, testType);
+          if (!res.success || !res.profile) {
+            throw new Error(res.error || 'Failed to register account on Turso database.');
+          }
+
+          saveLearnerProfile(res.profile);
+          setActiveProfileId(res.profile.id);
+          onProfileChanged(res.profile);
+          setSuccessMessage(`Welcome, ${res.profile.displayName}! Account stored in Turso Cloud Database.`);
+          setTimeout(onClose, 900);
+          return;
+        }
+
+        // 2. Fallback: Supabase Auth if configured
         if (hasCloud && supabase && email && password) {
           const { data, error } = await supabase.auth.signUp({
             email,
@@ -120,15 +139,36 @@ export const AuthModal = ({
           onProfileChanged(cloudProfile);
           setSuccessMessage(`Welcome, ${cloudProfile.displayName}! Cloud profile activated.`);
           setTimeout(onClose, 900);
-        } else {
-          // Fast zero-config real candidate creation
-          const localProfile = createNewProfile(displayName.trim(), targetBand, testType);
-          onProfileChanged(localProfile);
-          setSuccessMessage(`Welcome, ${localProfile.displayName}! Your candidate workspace is ready.`);
-          setTimeout(onClose, 900);
+          return;
         }
+
+        // 3. Fallback: Local profile creation
+        const localProfile = createNewProfile(displayName.trim(), targetBand, testType);
+        onProfileChanged(localProfile);
+        setSuccessMessage(`Welcome, ${localProfile.displayName}! Candidate workspace ready.`);
+        setTimeout(onClose, 900);
       } else {
-        // Sign In
+        // Sign In Flow
+        // 1. Primary: Turso LibSQL Cloud Edge Database
+        if (hasTurso && email && password) {
+          const res = await loginTursoAccount(email, password);
+          if (!res.success || !res.profile) {
+            throw new Error(res.error || 'Invalid credentials.');
+          }
+
+          saveLearnerProfile(res.profile);
+          setActiveProfileId(res.profile.id);
+
+          // Full hydration of user's past attempts, essays, speaking sessions, exam scores, and custom API keys!
+          await hydrateUserFromTurso(res.profile.id);
+
+          onProfileChanged(res.profile);
+          setSuccessMessage(`Signed in as ${res.profile.displayName}! All activity history & exam scores restored.`);
+          setTimeout(onClose, 900);
+          return;
+        }
+
+        // 2. Fallback: Supabase Sign In
         if (hasCloud && supabase && email && password) {
           const { data, error } = await supabase.auth.signInWithPassword({
             email,
@@ -170,19 +210,19 @@ export const AuthModal = ({
             }
             setSuccessMessage('Signed in successfully! Real candidate data synchronized.');
             setTimeout(onClose, 900);
+            return;
           }
+        }
+
+        // 3. Fallback: Local profiles list
+        if (existingProfiles.length > 0) {
+          const target = existingProfiles.find(p => p.displayName.toLowerCase().includes(email.toLowerCase())) || existingProfiles[0];
+          setActiveProfileId(target.id);
+          onProfileChanged(target);
+          setSuccessMessage(`Signed in as ${target.displayName}.`);
+          setTimeout(onClose, 700);
         } else {
-          // If local profiles exist
-          if (existingProfiles.length > 0) {
-            // Pick first matching or most recent
-            const target = existingProfiles.find(p => p.displayName.toLowerCase().includes(email.toLowerCase())) || existingProfiles[0];
-            setActiveProfileId(target.id);
-            onProfileChanged(target);
-            setSuccessMessage(`Signed in as ${target.displayName}.`);
-            setTimeout(onClose, 700);
-          } else {
-            throw new Error('No local candidate account found yet. Please click "Create Free Account" to set up your profile.');
-          }
+          throw new Error('No account found. Please click "Create Free Account" to set up your profile.');
         }
       }
     } catch (err: any) {
@@ -232,9 +272,9 @@ export const AuthModal = ({
           {/* Header */}
           <div style={{ marginBottom: '1.5rem' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.35rem' }}>
-              <span className="badge badge-brand" style={{ fontSize: '0.72rem' }}>
-                {hasCloud ? <Cloud size={12} /> : <ShieldCheck size={12} />}
-                {hasCloud ? 'Supabase Online Sync' : 'Local Candidate Storage'}
+              <span className="badge badge-brand" style={{ fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+                {hasTurso ? <Database size={12} /> : hasCloud ? <Cloud size={12} /> : <ShieldCheck size={12} />}
+                {hasTurso ? 'Turso Cloud LibSQL Edge DB' : hasCloud ? 'Supabase Online Sync' : 'Local Candidate Storage'}
               </span>
             </div>
             <h2 style={{ fontSize: '1.45rem', fontWeight: 750, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>

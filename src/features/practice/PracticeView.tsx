@@ -1,10 +1,21 @@
 import { useState } from 'react';
-import { CheckCircle2, XCircle, ArrowRight, Sparkles, BookOpen, Quote } from 'lucide-react';
+import {
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  Sparkles,
+  BookOpen,
+  Quote,
+  RefreshCw,
+  Cpu,
+  Check,
+  Zap,
+} from 'lucide-react';
 import { IELTS_QUESTIONS } from '../../data/ieltsDataset';
 import { Question, LearnerProfile, QuestionAttempt } from '../../lib/types';
 import { calculateMastery } from '../../lib/adaptiveEngine';
-import { recordQuestionAttempt, saveLearnerProfile } from '../../lib/storage';
-import { getTutorExplanation } from '../../lib/aiService';
+import { recordQuestionAttempt, saveLearnerProfile, loadQuestionAttempts } from '../../lib/storage';
+import { getTutorExplanation, generateAdaptiveQuestionsWithContext } from '../../lib/aiService';
 import { logStudyEvent, recalculateAndSaveStreak } from '../../lib/studyTracker';
 
 interface PracticeViewProps {
@@ -18,6 +29,7 @@ export const PracticeView = ({
   onProfileUpdated,
   onAttemptRecorded,
 }: PracticeViewProps) => {
+  const [questions, setQuestions] = useState<Question[]>(IELTS_QUESTIONS);
   const [selectedSkill, setSelectedSkill] = useState<'all' | 'reading' | 'listening'>('all');
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState('');
@@ -26,7 +38,49 @@ export const PracticeView = ({
   const [tutorExplanation, setTutorExplanation] = useState<string | null>(null);
   const [isLoadingTutor, setIsLoadingTutor] = useState(false);
 
-  const filteredQuestions = IELTS_QUESTIONS.filter(q =>
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationMsg, setGenerationMsg] = useState('');
+  const [selectedSubskillChoice, setSelectedSubskillChoice] = useState('auto');
+
+  // Past user attempts for context retention
+  const userAttempts = loadQuestionAttempts(profile.id);
+
+  // Compute lowest mastery subskill from real user profile
+  const subskillEntries = Object.entries(profile.subskillMastery || {});
+  subskillEntries.sort((a, b) => a[1].mastery - b[1].mastery);
+  const weakestSubskill = subskillEntries.length > 0 ? subskillEntries[0][0] : 'matching_headings';
+  const weakestData = profile.subskillMastery[weakestSubskill];
+  const weakestAcc = weakestData ? Math.round(weakestData.recentAccuracy * 100) : 45;
+
+  const handleGenerateAdaptive = async () => {
+    setIsGenerating(true);
+    setGenerationMsg('');
+    try {
+      const targetSub = selectedSubskillChoice === 'auto' ? weakestSubskill : selectedSubskillChoice;
+      const newQuestions = await generateAdaptiveQuestionsWithContext({
+        profile,
+        attempts: userAttempts,
+        focusSubskill: targetSub,
+        count: 2,
+      });
+
+      if (newQuestions.length > 0) {
+        setQuestions(prev => [...newQuestions, ...prev]);
+        setCurrentIndex(0);
+        setSelectedAnswer('');
+        setIsAnswerChecked(false);
+        setTutorExplanation(null);
+        setGenerationMsg(`Generated 2 adaptive Band ${profile.targetBand.toFixed(1)} questions targeting "${targetSub.replace(/_/g, ' ')}"!`);
+        setTimeout(() => setGenerationMsg(''), 7000);
+      }
+    } catch (err: any) {
+      console.warn('Adaptive generation error', err);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const filteredQuestions = questions.filter(q =>
     selectedSkill === 'all' ? true : q.skill === selectedSkill
   );
 
@@ -131,7 +185,108 @@ export const PracticeView = ({
     : currentQ.correctAnswer.toLowerCase() === selectedAnswer.trim().toLowerCase();
 
   return (
-    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
+    <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-5)' }}>
+      {/* Adaptive AI Question Generator Bar */}
+      <div className="double-bezel">
+        <div className="double-bezel-inner" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+              <div style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--brand-primary-subtle)',
+                color: 'var(--brand-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Sparkles size={16} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    Adaptive AI Question Generator
+                  </h3>
+                  <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
+                    Context-Aware Engine
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                  Generates fresh, authentic reading passages with line citations tuned to your stored error patterns.
+                </p>
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-neutral" style={{ fontSize: '0.72rem' }}>
+                {userAttempts.length} Past Attempts Logged
+              </span>
+              <span className="badge badge-brand" style={{ fontSize: '0.72rem' }}>
+                Calibrated Band {profile.targetBand.toFixed(1)}
+              </span>
+            </div>
+          </div>
+
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.75rem',
+            paddingTop: '0.75rem',
+            borderTop: '1px solid var(--border-subtle)',
+          }}>
+            <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)' }}>
+              Targeting Subskill: <strong style={{ color: 'var(--brand-primary)' }}>{weakestSubskill.replace(/_/g, ' ').toUpperCase()}</strong> ({weakestAcc}% mastery accuracy)
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <select
+                value={selectedSubskillChoice}
+                onChange={(e) => setSelectedSubskillChoice(e.target.value)}
+                className="input"
+                style={{ fontSize: '0.8rem', padding: '0.35rem 0.65rem', height: 'auto', width: 'auto' }}
+              >
+                <option value="auto">Auto-Target Weakest ({weakestSubskill.replace(/_/g, ' ')})</option>
+                <option value="matching_headings">Matching Headings</option>
+                <option value="true_false_not_given">True / False / Not Given</option>
+                <option value="summary_completion">Summary Completion</option>
+                <option value="sentence_completion">Sentence Completion</option>
+                <option value="multiple_choice">Multiple Choice</option>
+              </select>
+
+              <button
+                onClick={handleGenerateAdaptive}
+                disabled={isGenerating}
+                className="btn btn-primary btn-sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
+              >
+                <Sparkles size={13} className={isGenerating ? 'spin' : ''} />
+                <span>{isGenerating ? 'Generating Passage & Questions...' : 'Generate Adaptive Questions'}</span>
+              </button>
+            </div>
+          </div>
+
+          {generationMsg && (
+            <div style={{
+              padding: '0.6rem 0.85rem',
+              backgroundColor: 'var(--success-subtle)',
+              border: '1px solid var(--success-border)',
+              borderRadius: 'var(--radius-sm)',
+              fontSize: '0.82rem',
+              color: 'var(--success)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+            }}>
+              <CheckCircle2 size={15} />
+              <span>{generationMsg}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Filter and Progress Bar */}
       <div style={{
         display: 'flex',
@@ -179,7 +334,12 @@ export const PracticeView = ({
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          {currentQ.id.startsWith('ai-') && (
+            <span className="badge badge-brand" style={{ fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
+              <Zap size={11} /> AI Generated Drill
+            </span>
+          )}
           <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
             Item {currentIndex + 1} of {filteredQuestions.length}
           </span>

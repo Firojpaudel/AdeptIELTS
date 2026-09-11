@@ -9,7 +9,7 @@ import {
   ExamScoreRecord,
 } from './types';
 import { supabase, getSupabaseClient } from './supabaseClient';
-import { getTursoClient } from './tursoClient';
+import { getTursoClient, saveTursoUserSettings, fetchUserCompleteDataFromTurso } from './tursoClient';
 
 const PROFILES_KEY = 'adept_ielts_profiles_list';
 const ACTIVE_PROFILE_ID_KEY = 'adept_ielts_active_profile_id';
@@ -166,6 +166,7 @@ export function createNewProfile(
   all.push(newProfile);
   saveAllProfiles(all);
   setActiveProfileId(newProfile.id);
+  saveLearnerProfile(newProfile);
   return newProfile;
 }
 
@@ -401,8 +402,81 @@ export function loadAISettings(): AISettings {
 export function saveAISettings(settings: AISettings): void {
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const pid = getActiveProfileId();
+    if (pid) {
+      saveTursoUserSettings(pid, settings).catch(err => {
+        console.warn('Failed to sync AI settings to Turso:', err);
+      });
+    }
   } catch (e) {
     console.error('Failed to save AI settings', e);
+  }
+}
+
+export async function hydrateUserFromTurso(userId: string): Promise<{
+  attempts: QuestionAttempt[];
+  writings: WritingSubmission[];
+  speakings: SpeakingSession[];
+  scores: ExamScoreRecord[];
+  settings: AISettings | null;
+}> {
+  if (!userId) return { attempts: [], writings: [], speakings: [], scores: [], settings: null };
+  try {
+    const data = await fetchUserCompleteDataFromTurso(userId);
+
+    // 1. Attempts
+    if (data.attempts && data.attempts.length > 0) {
+      const localAttempts = loadQuestionAttempts(userId);
+      const attemptMap = new Map<string, QuestionAttempt>();
+      [...data.attempts, ...localAttempts].forEach(a => attemptMap.set(a.id, a));
+      const mergedAttempts = Array.from(attemptMap.values());
+      localStorage.setItem(getScopedKey('adept_ielts_attempts', userId), JSON.stringify(mergedAttempts));
+    }
+
+    // 2. Writings
+    if (data.writings && data.writings.length > 0) {
+      const localWritings = loadWritingSubmissions(userId);
+      const writeMap = new Map<string, WritingSubmission>();
+      [...data.writings, ...localWritings].forEach(w => writeMap.set(w.id, w));
+      const mergedWritings = Array.from(writeMap.values());
+      localStorage.setItem(getScopedKey('adept_ielts_writing', userId), JSON.stringify(mergedWritings));
+    }
+
+    // 3. Speakings
+    if (data.speakings && data.speakings.length > 0) {
+      const localSpeakings = loadSpeakingSessions(userId);
+      const speakMap = new Map<string, SpeakingSession>();
+      [...data.speakings, ...localSpeakings].forEach(s => speakMap.set(s.id, s));
+      const mergedSpeakings = Array.from(speakMap.values());
+      localStorage.setItem(getScopedKey('adept_ielts_speaking', userId), JSON.stringify(mergedSpeakings));
+    }
+
+    // 4. Exam Scores
+    if (data.scores && data.scores.length > 0) {
+      const localScores = await loadExamScores(userId);
+      const scoreMap = new Map<string, ExamScoreRecord>();
+      [...data.scores, ...localScores].forEach(s => scoreMap.set(s.id, s));
+      const mergedScores = Array.from(scoreMap.values());
+      localStorage.setItem(getScopedKey(EXAM_SCORES_KEY, userId), JSON.stringify(mergedScores));
+    }
+
+    // 5. Custom AI Settings
+    if (data.settings && data.settings.apiKey) {
+      const current = loadAISettings();
+      const updatedSettings = {
+        ...current,
+        provider: data.settings.provider || current.provider,
+        apiKey: data.settings.apiKey || current.apiKey,
+        workerUrl: data.settings.workerUrl || current.workerUrl,
+        tokenSavingMode: data.settings.tokenSavingMode ?? current.tokenSavingMode,
+      };
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(updatedSettings));
+    }
+
+    return data;
+  } catch (err) {
+    console.warn('Hydration from Turso failed or offline:', err);
+    return { attempts: [], writings: [], speakings: [], scores: [], settings: null };
   }
 }
 

@@ -1,15 +1,30 @@
 import { useState, useEffect } from 'react';
-import { CheckCircle2, AlertTriangle, TrendingUp, BookOpen, Award, Database, Calendar, Flame } from 'lucide-react';
+import {
+  CheckCircle2,
+  AlertTriangle,
+  TrendingUp,
+  BookOpen,
+  Award,
+  Database,
+  Calendar,
+  Sparkles,
+  ArrowRight,
+  ShieldAlert,
+  Target,
+  RefreshCw,
+} from 'lucide-react';
 import { LearnerProfile, QuestionAttempt, ExamScoreRecord } from '../../lib/types';
 import { loadExamScores, loadReadResourceIds } from '../../lib/storage';
+import { generateAIExamCritique, AIExamCritique } from '../../lib/aiService';
 import { StudyCalendarModal } from '../../components/StudyCalendarModal';
 
 interface ProgressViewProps {
   profile: LearnerProfile;
   attempts: QuestionAttempt[];
+  onNavigate?: (tab: any) => void;
 }
 
-export const ProgressView = ({ profile, attempts }: ProgressViewProps) => {
+export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProps) => {
   const masteryEntries = Object.entries(profile.subskillMastery || {});
 
   const totalCorrect = attempts.filter(a => a.isCorrect).length;
@@ -19,6 +34,25 @@ export const ProgressView = ({ profile, attempts }: ProgressViewProps) => {
   const [readResourceIds, setReadResourceIds] = useState<string[]>([]);
   const [loadingCloudData, setLoadingCloudData] = useState(true);
   const [showCalendar, setShowCalendar] = useState(false);
+
+  const [aiCritique, setAiCritique] = useState<AIExamCritique | null>(null);
+  const [isCritiquing, setIsCritiquing] = useState(false);
+
+  const handleRefreshCritique = async (scoresToUse: ExamScoreRecord[]) => {
+    setIsCritiquing(true);
+    try {
+      const critique = await generateAIExamCritique({
+        profile,
+        examScores: scoresToUse,
+        attempts,
+      });
+      setAiCritique(critique);
+    } catch (e) {
+      console.warn('AI critique generation note:', e);
+    } finally {
+      setIsCritiquing(false);
+    }
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -32,6 +66,9 @@ export const ProgressView = ({ profile, attempts }: ProgressViewProps) => {
           setExamScores(scores);
           setReadResourceIds(reads);
           setLoadingCloudData(false);
+          generateAIExamCritique({ profile, examScores: scores, attempts })
+            .then(res => { if (isMounted) setAiCritique(res); })
+            .catch(() => {});
         }
       } catch (e) {
         if (isMounted) setLoadingCloudData(false);
@@ -39,7 +76,7 @@ export const ProgressView = ({ profile, attempts }: ProgressViewProps) => {
     }
     fetchCloudData();
     return () => { isMounted = false; };
-  }, [profile.id]);
+  }, [profile.id, attempts.length]);
 
   return (
     <div className="fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1.75rem', maxWidth: '1100px', margin: '0 auto' }}>
@@ -116,6 +153,211 @@ export const ProgressView = ({ profile, attempts }: ProgressViewProps) => {
           <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
             {profile.examDate ? `Exam: ${profile.examDate}` : 'Target date open'}
           </div>
+        </div>
+      </div>
+
+      {/* AI Exam & Activity Diagnostic Critique Card */}
+      <div className="double-bezel">
+        <div className="double-bezel-inner" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: 'var(--radius-sm)',
+                backgroundColor: 'var(--brand-primary-subtle)',
+                color: 'var(--brand-primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <Sparkles size={18} />
+              </div>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                    AI Exam Score & Diagnostic Critique
+                  </h3>
+                  <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
+                    Senior IELTS Psychometrician
+                  </span>
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                  Holistic evaluation computed from your stored mock exam scores, error patterns, and subskill metrics.
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => handleRefreshCritique(examScores)}
+              disabled={isCritiquing}
+              className="btn btn-secondary btn-sm"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
+            >
+              <RefreshCw size={13} className={isCritiquing ? 'spin' : ''} />
+              <span>{isCritiquing ? 'Evaluating Scores...' : 'Re-Evaluate Activities'}</span>
+            </button>
+          </div>
+
+          {aiCritique ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              {/* Executive Diagnosis Banner */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'minmax(220px, 280px) 1fr',
+                gap: '1.25rem',
+                backgroundColor: 'var(--bg-subtle)',
+                borderRadius: 'var(--radius-md)',
+                padding: '1.25rem',
+                border: '1px solid var(--border-subtle)',
+              }}>
+                <div>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                    Target Band Readiness
+                  </div>
+                  <div className="font-mono" style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--brand-primary)', marginTop: '0.25rem' }}>
+                    {aiCritique.readinessPercentage}% Ready
+                  </div>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                    {aiCritique.overallReadiness}
+                  </div>
+                  <div style={{
+                    width: '100%',
+                    height: '8px',
+                    backgroundColor: 'rgba(0,0,0,0.06)',
+                    borderRadius: 'var(--radius-full)',
+                    marginTop: '0.65rem',
+                    overflow: 'hidden',
+                  }}>
+                    <div style={{
+                      width: `${aiCritique.readinessPercentage}%`,
+                      height: '100%',
+                      backgroundColor: 'var(--brand-primary)',
+                      borderRadius: 'var(--radius-full)',
+                      transition: 'width 0.6s ease',
+                    }} />
+                  </div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: '0.4rem' }}>
+                    Estimated timeline: <strong>{aiCritique.timelineEstimate}</strong>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                  <div style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', letterSpacing: '0.04em' }}>
+                    Executive Examiner Synthesis
+                  </div>
+                  <p style={{ fontSize: '0.88rem', lineHeight: 1.6, color: 'var(--text-primary)', marginTop: '0.35rem' }}>
+                    {aiCritique.executiveSummary}
+                  </p>
+                </div>
+              </div>
+
+              {/* Diagnosed Bottlenecks */}
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <ShieldAlert size={14} color="var(--warning)" />
+                  <span>Primary Score Impediments Diagnosed by AI</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '0.85rem' }}>
+                  {aiCritique.keyBottlenecks.map((bn, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '1rem',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-default)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.4rem',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--brand-primary)' }}>
+                          {bn.affectedSkill} Bottleneck
+                        </span>
+                        <span className="badge badge-warning" style={{ fontSize: '0.68rem' }}>
+                          Score Drag
+                        </span>
+                      </div>
+                      <div style={{ fontWeight: 650, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+                        {bn.title}
+                      </div>
+                      <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                        {bn.description}
+                      </p>
+                      <div style={{ fontSize: '0.76rem', color: 'var(--error)', fontWeight: 500, marginTop: 'auto', paddingTop: '0.35rem', borderTop: '1px dashed var(--border-subtle)' }}>
+                        Impact: {bn.impact}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Priority Adaptive Drills */}
+              <div>
+                <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '0.65rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                  <Target size={14} color="var(--brand-primary)" />
+                  <span>AI Prescribed High-Yield Recovery Actions</span>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem' }}>
+                  {aiCritique.priorityDrills.map((drill, i) => (
+                    <div
+                      key={i}
+                      style={{
+                        padding: '1rem',
+                        borderRadius: 'var(--radius-md)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-default)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        gap: '0.65rem',
+                      }}
+                    >
+                      <div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                            {drill.subskillLabel}
+                          </span>
+                          <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
+                            {drill.estimatedGain}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.4rem', lineHeight: 1.45 }}>
+                          <strong>Diagnosis:</strong> {drill.reason}
+                        </p>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--text-primary)', marginTop: '0.3rem', lineHeight: 1.45 }}>
+                          <strong>Prescription:</strong> {drill.action}
+                        </p>
+                      </div>
+
+                      {onNavigate && (
+                        <button
+                          onClick={() => onNavigate('practice')}
+                          className="btn btn-secondary btn-sm"
+                          style={{
+                            width: '100%',
+                            justifyContent: 'center',
+                            fontSize: '0.78rem',
+                            marginTop: '0.25rem',
+                            gap: '0.35rem',
+                          }}
+                        >
+                          <span>Launch Adaptive Drill</span>
+                          <ArrowRight size={13} />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.88rem' }}>
+              Synthesizing exam scores, question attempts, and subskill diagnostics...
+            </div>
+          )}
         </div>
       </div>
 
