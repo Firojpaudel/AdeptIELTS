@@ -4,11 +4,15 @@ import { Mic, Square, Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucid
 interface AudioRecorderProps {
   maxDurationSeconds?: number;
   onRecordingComplete: (audioBlob: Blob, transcript: string, durationSeconds: number) => void;
+  onLiveTranscript?: (liveText: string) => void;
+  onRecordingStatusChange?: (recording: boolean) => void;
 }
 
 export const AudioRecorder = ({
   maxDurationSeconds = 120,
   onRecordingComplete,
+  onLiveTranscript,
+  onRecordingStatusChange,
 }: AudioRecorderProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -22,29 +26,71 @@ export const AudioRecorder = ({
   const timerRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
   const audioPlayerRef = useRef<HTMLAudioElement | null>(null);
+  const liveTranscriptRef = useRef('');
+  const durationRef = useRef(0);
+  const isRecordingRef = useRef(false);
+  const [speechSupported, setSpeechSupported] = useState(false);
+  const mimeTypeRef = useRef('');
 
-  // Initialize Speech Recognition if supported
+  // Detect supported audio MIME type across iOS Safari and Android Chrome
+  const getSupportedMimeType = (): string => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/aac',
+      'audio/ogg;codecs=opus',
+    ];
+    for (const mime of candidates) {
+      if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(mime)) {
+        return mime;
+      }
+    }
+    return '';
+  };
+
+  // Initialize Speech Recognition if supported across browsers (Chrome, Edge, Safari 14.5+)
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (SpeechRecognition) {
-      const recognition = new SpeechRecognition();
-      recognition.continuous = true;
-      recognition.interimResults = true;
-      recognition.lang = 'en-US';
+      setSpeechSupported(true);
+      try {
+        const recognition = new SpeechRecognition();
+        recognition.continuous = true;
+        recognition.interimResults = true;
+        recognition.lang = 'en-US';
 
-      recognition.onresult = (event: any) => {
-        let currentText = '';
-        for (let i = 0; i < event.results.length; i++) {
-          currentText += event.results[i][0].transcript + ' ';
-        }
-        setLiveTranscript(currentText.trim());
-      };
+        recognition.onresult = (event: any) => {
+          let currentText = '';
+          for (let i = 0; i < event.results.length; i++) {
+            currentText += event.results[i][0].transcript + ' ';
+          }
+          const trimmed = currentText.trim();
+          setLiveTranscript(trimmed);
+          liveTranscriptRef.current = trimmed;
+          if (onLiveTranscript) {
+            onLiveTranscript(trimmed);
+          }
+        };
 
-      recognition.onerror = (e: any) => {
-        console.warn('Speech recognition warning:', e.error);
-      };
+        recognition.onerror = (e: any) => {
+          console.warn('Speech recognition status/warning:', e?.error);
+        };
 
-      recognitionRef.current = recognition;
+        recognition.onend = () => {
+          // Restart recognition if still actively recording (e.g. mobile Safari silence timeout)
+          if (isRecordingRef.current && recognitionRef.current) {
+            try {
+              recognitionRef.current.start();
+            } catch (_) {}
+          }
+        };
+
+        recognitionRef.current = recognition;
+      } catch (e) {
+        console.warn('SpeechRecognition initialization error:', e);
+      }
     }
   }, []);
 
@@ -52,62 +98,94 @@ export const AudioRecorder = ({
     setErrorMsg(null);
     audioChunksRef.current = [];
     setLiveTranscript('');
+    liveTranscriptRef.current = '';
     setAudioUrl(null);
     setDuration(0);
+    durationRef.current = 0;
 
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const mediaRecorder = new MediaRecorder(stream);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true,
+        },
+      });
+
+      const mime = getSupportedMimeType();
+      mimeTypeRef.current = mime;
+      const options = mime ? { mimeType: mime } : undefined;
+
+      let mediaRecorder: MediaRecorder;
+      try {
+        mediaRecorder = new MediaRecorder(stream, options);
+      } catch (e) {
+        // Fallback without mimeType option if browser rejects format
+        mediaRecorder = new MediaRecorder(stream);
+      }
+
       mediaRecorderRef.current = mediaRecorder;
 
       mediaRecorder.ondataavailable = (e) => {
-        if (e.data.size > 0) {
+        if (e.data && e.data.size > 0) {
           audioChunksRef.current.push(e.data);
         }
       };
 
       mediaRecorder.onstop = () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        const blobType = mimeTypeRef.current || (audioChunksRef.current[0]?.type) || 'audio/webm';
+        const audioBlob = new Blob(audioChunksRef.current, { type: blobType });
         const url = URL.createObjectURL(audioBlob);
         setAudioUrl(url);
 
-        // Discard active mic stream tracks for security/privacy
+        // Clean up microphone stream tracks
         stream.getTracks().forEach(track => track.stop());
 
-        onRecordingComplete(audioBlob, liveTranscript, duration);
+        onRecordingComplete(audioBlob, liveTranscriptRef.current, durationRef.current);
       };
 
       mediaRecorder.start(250);
       setIsRecording(true);
+      isRecordingRef.current = true;
+      if (onRecordingStatusChange) onRecordingStatusChange(true);
 
       // Start duration counter
       timerRef.current = setInterval(() => {
         setDuration(prev => {
-          if (prev >= maxDurationSeconds) {
+          const next = prev + 1;
+          durationRef.current = next;
+          if (next >= maxDurationSeconds) {
             stopRecording();
             return maxDurationSeconds;
           }
-          return prev + 1;
+          return next;
         });
       }, 1000);
 
-      // Start live transcription
+      // Start live transcription if available
       if (recognitionRef.current) {
         try {
           recognitionRef.current.start();
         } catch (e) {
-          // Already started or unsupported
+          // Already started or unsupported on this device
         }
       }
     } catch (err: any) {
       console.error('Microphone access denied:', err);
-      setErrorMsg('Microphone access is required for IELTS Speaking practice. Please check your browser permissions.');
+      setErrorMsg(
+        err?.name === 'NotAllowedError' || err?.name === 'PermissionDeniedError'
+          ? 'Microphone permission was denied. Please allow microphone access in your browser settings to practice Speaking.'
+          : 'Could not access microphone. Please check your device audio settings.'
+      );
     }
   };
 
   const stopRecording = () => {
+    isRecordingRef.current = false;
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (_) {}
     }
     if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -115,9 +193,10 @@ export const AudioRecorder = ({
     if (recognitionRef.current) {
       try {
         recognitionRef.current.stop();
-      } catch (e) {}
+      } catch (_) {}
     }
     setIsRecording(false);
+    if (onRecordingStatusChange) onRecordingStatusChange(false);
   };
 
   const togglePlayback = () => {
@@ -126,7 +205,7 @@ export const AudioRecorder = ({
       audioPlayerRef.current.pause();
       setIsPlaying(false);
     } else {
-      audioPlayerRef.current.play();
+      audioPlayerRef.current.play().catch(() => setIsPlaying(false));
       setIsPlaying(true);
     }
   };
@@ -137,8 +216,13 @@ export const AudioRecorder = ({
     }
     setAudioUrl(null);
     setLiveTranscript('');
+    liveTranscriptRef.current = '';
     setDuration(0);
+    durationRef.current = 0;
     setIsPlaying(false);
+    if (onLiveTranscript) {
+      onLiveTranscript('');
+    }
   };
 
   const formatTime = (secs: number) => {
@@ -150,7 +234,7 @@ export const AudioRecorder = ({
   return (
     <div className="double-bezel">
       <div className="double-bezel-inner" style={{
-        padding: '1.5rem',
+        padding: 'clamp(1rem, 4vw, 1.5rem)',
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-4)',
@@ -240,9 +324,20 @@ export const AudioRecorder = ({
             </div>
           </div>
 
-          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-            {isRecording ? 'Speaking in progress...' : audioUrl ? 'Response captured' : 'Microphone standby'}
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+              {isRecording ? 'Speaking in progress...' : audioUrl ? 'Response captured' : 'Microphone standby'}
+            </span>
+            {speechSupported ? (
+              <span className="badge badge-brand" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                STT Live
+              </span>
+            ) : (
+              <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                Audio Only
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Audio player element (hidden native controller) */}
@@ -255,18 +350,37 @@ export const AudioRecorder = ({
           />
         )}
 
-        {/* Real-time transcript box */}
+        {/* Real-time transcript status & transfer indicator */}
         <div style={{
-          backgroundColor: 'var(--bg-subtle)',
-          border: '1px solid var(--border-default)',
+          backgroundColor: isRecording ? 'var(--brand-primary-subtle)' : 'var(--bg-subtle)',
+          border: `1px solid ${isRecording ? 'var(--brand-primary-border)' : 'var(--border-default)'}`,
           borderRadius: 'var(--radius-sm)',
           padding: '0.85rem 1rem',
           minHeight: '60px',
+          transition: 'all 160ms ease-out',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.25rem' }}>
-            <Volume2 size={13} color="var(--text-muted)" />
-            <span style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-              Live Speech Transcript:
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.35rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', flexWrap: 'wrap' }}>
+              <Volume2 size={13} color="var(--brand-primary)" />
+              <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                Live Speech Stream
+              </span>
+              {isRecording && (
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  fontSize: '0.72rem',
+                  fontWeight: 650,
+                  color: 'var(--brand-primary)',
+                }}>
+                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--brand-primary)', animation: 'pulseDot 1.4s infinite' }} />
+                  Streaming live into editor below ↓
+                </span>
+              )}
+            </div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              {speechSupported ? 'Real-Time Web Speech' : 'Microphone Ready'}
             </span>
           </div>
           <p style={{
@@ -274,8 +388,13 @@ export const AudioRecorder = ({
             lineHeight: 1.5,
             color: liveTranscript ? 'var(--text-primary)' : 'var(--text-muted)',
             fontStyle: liveTranscript ? 'normal' : 'italic',
+            wordBreak: 'break-word',
           }}>
-            {liveTranscript || (isRecording ? 'Start speaking clearly into your microphone...' : 'Recorded spoken words will be transcribed here automatically.')}
+            {liveTranscript
+              ? `"${liveTranscript}"`
+              : (isRecording
+                  ? 'Listening to microphone... spoken words are streaming directly into your response workspace below.'
+                  : 'Spoken words stream directly into your response workspace below as you talk.')}
           </p>
         </div>
       </div>

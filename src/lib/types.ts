@@ -74,6 +74,20 @@ export interface QuestionAttempt {
   timestamp: string;
 }
 
+export interface LexicalUpgrade {
+  original: string;
+  upgrade: string;
+  context: string;
+  category?: 'academic_vocabulary' | 'idiomatic_collocation' | 'precision_verb' | 'discourse_marker';
+}
+
+export interface SentenceCorrection {
+  original: string;
+  corrected: string;
+  explanation: string;
+  type?: 'grammar' | 'coherence' | 'lexical' | 'task_response' | 'fluency';
+}
+
 export interface WritingFeedback {
   estimated_band: number;
   criteria: {
@@ -82,19 +96,25 @@ export interface WritingFeedback {
     lexical_resource: number;
     grammar: number;
   };
+  examiner_summary?: string;
   strengths: string[];
+  what_went_right?: string[];
+  what_went_wrong?: string[];
   issues: {
     quote?: string;
     problem: string;
     suggestion: string;
     criterion: 'task_response' | 'coherence' | 'lexical_resource' | 'grammar';
   }[];
+  lexical_upgrades?: LexicalUpgrade[];
+  sentence_corrections?: SentenceCorrection[];
   priority_actions: string[];
   rewrite_exercises: {
     original: string;
     instruction: string;
     model_revision: string;
   }[];
+  examiner_model_answer?: string;
 }
 
 export interface WritingSubmission {
@@ -117,6 +137,10 @@ export interface SpeakingFeedback {
     grammatical_range: number;
     pronunciation: number;
   };
+  examiner_summary?: string;
+  strengths?: string[];
+  what_went_right?: string[];
+  what_went_wrong?: string[];
   observations: {
     fluency: string;
     vocabulary: string;
@@ -128,7 +152,10 @@ export interface SpeakingFeedback {
     type: 'grammar' | 'vocab' | 'fluency';
     comment: string;
   }[];
+  lexical_upgrades?: LexicalUpgrade[];
+  speech_flow_corrections?: SentenceCorrection[];
   targeted_drills: string[];
+  examiner_model_answer?: string;
 }
 
 export interface SpeakingPrompt {
@@ -241,7 +268,7 @@ export interface IELTSBook {
 }
 
 export interface AISettings {
-  provider: 'groq' | 'openrouter' | 'gemini' | 'cloudflare' | 'offline_deterministic';
+  provider: 'groq' | 'gemini' | 'openrouter' | 'anthropic' | 'openai' | 'cloudflare' | 'offline_deterministic';
   apiKey: string;
   modelOverride?: string;
   workerUrl: string;

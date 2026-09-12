@@ -1,7 +1,6 @@
 import {
   ArrowRight,
   Clock,
-  Calendar,
   Zap,
   Sparkles,
   BookOpen,
@@ -16,14 +15,15 @@ import {
 import { LearnerProfile, QuestionAttempt, VocabularyCard } from '../../lib/types';
 import { getRecommendedActivities } from '../../lib/adaptiveEngine';
 import { SkillMeter } from '../../components/SkillMeter';
-import { getBandDescriptor } from '../../lib/ieltsScoring';
 import { ActiveTab } from '../../components/AppShell';
+import { saveLearnerProfile } from '../../lib/storage';
 
 interface DashboardViewProps {
   profile: LearnerProfile;
   attempts: QuestionAttempt[];
   vocabCards: VocabularyCard[];
   onNavigate: (tab: ActiveTab) => void;
+  onProfileUpdated?: (profile: LearnerProfile) => void;
 }
 
 export const DashboardView = ({
@@ -31,10 +31,16 @@ export const DashboardView = ({
   attempts,
   vocabCards,
   onNavigate,
+  onProfileUpdated,
 }: DashboardViewProps) => {
   const recommendations = getRecommendedActivities(profile, attempts, vocabCards);
   const primaryRec = recommendations[0];
-  const descriptor = getBandDescriptor(profile.currentEstimatedBand || 6.5);
+
+  const handleTargetBandChange = (newBand: number) => {
+    const updated: LearnerProfile = { ...profile, targetBand: newBand };
+    saveLearnerProfile(updated);
+    onProfileUpdated?.(updated);
+  };
 
   // Dynamic date calculations
   const examDate = profile.examDate ? new Date(profile.examDate) : new Date(Date.now() + 42 * 24 * 60 * 60 * 1000);
@@ -55,51 +61,63 @@ export const DashboardView = ({
         display: 'flex',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        alignItems: 'flex-end',
+        alignItems: 'center',
         gap: '1.25rem',
         paddingBottom: '1.25rem',
         borderBottom: '1px solid var(--border-subtle)',
       }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginBottom: '0.5rem' }}>
-            <span className="badge badge-brand" style={{ letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-              {profile.testType === 'academic' ? 'IELTS Academic Module' : 'IELTS General Training'}
-            </span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              Candidate: <strong style={{ color: 'var(--text-primary)' }}>{profile.displayName}</strong>
-            </span>
-          </div>
-
-          <h1 style={{ fontSize: '1.85rem', letterSpacing: '-0.03em', fontWeight: 700 }}>
-            Target Band {profile.targetBand.toFixed(1)} Mastery Path
+          <h1 style={{ fontSize: '1.75rem', letterSpacing: '-0.025em', fontWeight: 700, margin: 0, color: 'var(--text-primary)' }}>
+            Study Plan & Mastery
           </h1>
-          <p style={{ marginTop: '0.25rem', maxWidth: '680px', fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
-            {descriptor.summary}
+          <p style={{ margin: '0.35rem 0 0', fontSize: '0.88rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+            <span style={{ fontWeight: 550, color: 'var(--text-secondary)' }}>
+              {profile.testType === 'academic' ? 'IELTS Academic' : 'General Training'}
+            </span>
+            <span>•</span>
+            <span>{daysUntilExam} days to test</span>
           </p>
         </div>
 
-        {/* Top Right Quick Stats */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+        {/* Top Right Controls: Target Band Modifier + Mock Exam */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <div style={{
-            display: 'flex',
+            display: 'inline-flex',
             alignItems: 'center',
             gap: '0.5rem',
-            padding: '0.45rem 0.85rem',
+            padding: '0.35rem 0.75rem',
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-default)',
-            borderRadius: 'var(--radius-md)',
+            borderRadius: 'var(--radius-full)',
             boxShadow: 'var(--shadow-xs)',
           }}>
-            <Calendar size={14} color="var(--text-muted)" />
-            <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {daysUntilExam} Days to Test
-            </span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)', fontWeight: 600 }}>Target</span>
+            <select
+              id="header-target-band-select"
+              value={profile.targetBand}
+              onChange={(e) => handleTargetBandChange(parseFloat(e.target.value))}
+              className="target-band-select"
+              style={{
+                border: 'none',
+                padding: '0.1rem 0.25rem',
+                fontSize: '0.85rem',
+                background: 'transparent',
+                boxShadow: 'none',
+                cursor: 'pointer',
+              }}
+              aria-label="Change target band"
+              title="Click to adjust your target band"
+            >
+              {[5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map(b => (
+                <option key={b} value={b}>Band {b.toFixed(1)}</option>
+              ))}
+            </select>
           </div>
 
           <button
             onClick={() => onNavigate('mock')}
             className="btn btn-secondary btn-sm"
-            style={{ fontWeight: 600 }}
+            style={{ fontWeight: 600, padding: '0.45rem 1rem' }}
           >
             Full Mock Exam
           </button>
@@ -172,26 +190,37 @@ export const DashboardView = ({
       )}
 
       {/* Asymmetric Bento Grid: Skill Breakdown & Diagnostic Analytics */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '1.25rem' }}>
+      <div className="dashboard-bento">
         
-        {/* Left Column (7 cols): 4 Skills Breakdown */}
-        <div className="card" style={{
-          gridColumn: 'span 7',
+        {/* Left Column (7 cols on desktop, 1 col on mobile): 4 Skills Breakdown */}
+        <div className="card dashboard-bento-main" style={{
           padding: '1.5rem',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.2rem',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
             <div>
               <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Candidate Skill Breakdown</h3>
               <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                 Official Band Scale (1.0–9.0) with real-time adaptive mastery
               </p>
             </div>
-            <span className="badge badge-zinc" style={{ fontSize: '0.75rem' }}>
-              Target: Band {profile.targetBand.toFixed(1)}
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <span style={{ fontSize: '0.76rem', color: 'var(--text-muted)', fontWeight: 600 }}>Target:</span>
+              <select
+                value={profile.targetBand}
+                onChange={(e) => handleTargetBandChange(parseFloat(e.target.value))}
+                className="target-band-select"
+                style={{ padding: '0.18rem 0.5rem', fontSize: '0.78rem' }}
+                aria-label="Change Target Band"
+                title="Change Target Band"
+              >
+                {[5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map(b => (
+                  <option key={b} value={b}>Band {b.toFixed(1)}</option>
+                ))}
+              </select>
+            </div>
           </div>
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
@@ -226,8 +255,8 @@ export const DashboardView = ({
           </div>
         </div>
 
-        {/* Right Column (5 cols): Diagnostic Engine & Spaced Review */}
-        <div style={{ gridColumn: 'span 5', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        {/* Right Column (5 cols on desktop, 1 col on mobile): Diagnostic Engine & Spaced Review */}
+        <div className="dashboard-bento-side" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* Spaced Memory Box */}
           <div className="card card-hover" style={{ padding: '1.35rem' }}>
@@ -294,6 +323,26 @@ export const DashboardView = ({
                 <strong>Adaptive Focus:</strong> Speed up inference scanning on Passage 2 to increase overall band ceiling.
               </span>
             </div>
+
+            <button
+              onClick={() => onNavigate('progress')}
+              className="btn btn-secondary btn-sm"
+              style={{
+                width: '100%',
+                justifyContent: 'space-between',
+                padding: '0.6rem 0.85rem',
+                fontWeight: 650,
+                marginTop: '0.15rem',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-default)',
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <TrendingUp size={14} color="var(--brand-primary)" />
+                <span>Deep Diagnostics & Mastery Hub</span>
+              </span>
+              <ChevronRight size={14} />
+            </button>
           </div>
 
         </div>
@@ -317,7 +366,7 @@ export const DashboardView = ({
               gap: '0.85rem',
               textAlign: 'left',
               cursor: 'pointer',
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
             }}
           >
             <div style={{
@@ -352,15 +401,15 @@ export const DashboardView = ({
               gap: '0.85rem',
               textAlign: 'left',
               cursor: 'pointer',
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
             }}
           >
             <div style={{
               width: '38px',
               height: '38px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: '#fffbeb',
-              color: '#d97706',
+              backgroundColor: 'var(--warning-subtle)',
+              color: 'var(--warning)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -387,15 +436,15 @@ export const DashboardView = ({
               gap: '0.85rem',
               textAlign: 'left',
               cursor: 'pointer',
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
             }}
           >
             <div style={{
               width: '38px',
               height: '38px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: '#eff6ff',
-              color: '#2563eb',
+              backgroundColor: 'var(--info-subtle)',
+              color: 'var(--info)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -422,15 +471,15 @@ export const DashboardView = ({
               gap: '0.85rem',
               textAlign: 'left',
               cursor: 'pointer',
-              background: '#ffffff',
+              background: 'var(--bg-surface)',
             }}
           >
             <div style={{
               width: '38px',
               height: '38px',
               borderRadius: 'var(--radius-md)',
-              backgroundColor: '#f5f3ff',
-              color: '#7c3aed',
+              backgroundColor: 'var(--brand-primary-subtle)',
+              color: 'var(--brand-primary)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',

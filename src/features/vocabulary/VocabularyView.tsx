@@ -270,7 +270,7 @@ export const VocabularyView = ({
                   style={{
                     width: '100%',
                     height: '100%',
-                    padding: '2.25rem 2.5rem',
+                    padding: 'clamp(1.25rem, 5vw, 2.25rem)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -287,8 +287,8 @@ export const VocabularyView = ({
 
                   {/* Card Center: Target Word */}
                   <div style={{ textAlign: 'center', padding: '1rem 0' }}>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'center' }}>
-                      <h2 style={{ fontSize: '3rem', letterSpacing: '-0.03em', color: 'var(--text-primary)', fontWeight: 750 }}>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '0.65rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                      <h2 style={{ fontSize: 'clamp(1.75rem, 6.5vw, 3rem)', letterSpacing: '-0.03em', color: 'var(--text-primary)', fontWeight: 750, wordBreak: 'break-word', overflowWrap: 'break-word' }}>
                         {currentCard.word}
                       </h2>
                       <button
@@ -332,7 +332,7 @@ export const VocabularyView = ({
                   style={{
                     width: '100%',
                     height: '100%',
-                    padding: '2rem 2.5rem',
+                    padding: 'clamp(1rem, 4vw, 2rem)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -341,8 +341,8 @@ export const VocabularyView = ({
                 >
                   {/* Back Header */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                      <span style={{ fontWeight: 750, fontSize: '1.25rem', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 750, fontSize: 'clamp(1.05rem, 4vw, 1.25rem)', color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
                         {currentCard.word}
                       </span>
                       <span className="font-mono" style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
@@ -430,11 +430,11 @@ export const VocabularyView = ({
 
           {/* Guided Recall Assessment Bar - Constant Height (No layout shift) */}
           <div style={{
-            height: '92px',
+            minHeight: '92px',
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-default)',
             borderRadius: 'var(--radius-lg)',
-            padding: '0.85rem 1.25rem',
+            padding: '0.85rem 1rem',
             boxShadow: 'var(--shadow-sm)',
             display: 'flex',
             alignItems: 'center',
@@ -458,8 +458,8 @@ export const VocabularyView = ({
 
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(4, 1fr)',
-                  gap: '0.65rem',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(68px, 1fr))',
+                  gap: '0.5rem',
                 }}>
                   {/* Again */}
                   <button

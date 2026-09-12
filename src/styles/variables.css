@@ -1,21 +1,21 @@
 :root {
-  /* High-End Zinc & Editorial Luxury Design Tokens (shadcn & taste-skill compliant) */
+  /* High-End Academic & Editorial Design Tokens (Light Mode Default) */
   --bg-canvas: #f8fafc;
   --bg-surface: #ffffff;
-  --bg-subtle: #f4f4f5;
-  --bg-muted: #e4e4e7;
-  --bg-inverse: #09090b;
+  --bg-subtle: #f1f5f9;
+  --bg-muted: #e2e8f0;
+  --bg-inverse: #0f172a;
 
-  --border-subtle: rgba(228, 228, 231, 0.6);
-  --border-default: #e4e4e7;
-  --border-strong: #d4d4d8;
-  --border-focus: #09090b;
+  --border-subtle: rgba(226, 232, 240, 0.8);
+  --border-default: #e2e8f0;
+  --border-strong: #cbd5e1;
+  --border-focus: #0d9488;
 
-  --text-primary: #09090b;
-  --text-secondary: #52525b;
-  --text-muted: #71717a;
-  --text-subtle: #a1a1aa;
-  --text-inverse: #fafafa;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --text-subtle: #94a3b8;
+  --text-inverse: #ffffff;
 
   /* Refined Academic Accent Tokens */
   --brand-primary: #0d9488;
@@ -24,8 +24,8 @@
   --brand-primary-border: #ccfbf1;
   --brand-primary-text: #0f766e;
 
-  --accent-zinc: #18181b;
-  --accent-zinc-hover: #27272a;
+  --accent-zinc: #0f172a;
+  --accent-zinc-hover: #1e293b;
 
   /* Semantic Alerts */
   --success: #10b981;
@@ -43,6 +43,10 @@
   --info: #0ea5e9;
   --info-subtle: #f0f9ff;
   --info-border: #bae6fd;
+
+  /* Logo Switcher Visibility */
+  --logo-light-display: block;
+  --logo-dark-display: none;
 
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -68,7 +72,7 @@
   --radius-xl: 18px;
   --radius-full: 9999px;
 
-  /* High-End Layered Ambient Shadows (no harsh gray drops) */
+  /* High-End Layered Ambient Shadows */
   --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
   --shadow-md: 0 4px 12px -2px rgba(0, 0, 0, 0.05), 0 2px 6px -1px rgba(0, 0, 0, 0.03);
@@ -79,7 +83,67 @@
   --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
   --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
   --ease-spring: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
   --transition-fast: 140ms cubic-bezier(0.23, 1, 0.32, 1);
   --transition-base: 200ms cubic-bezier(0.23, 1, 0.32, 1);
   --transition-slow: 300ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+/* Dark Theme Tokens (Deep Zinc 950 Aesthetic - Linear / Vercel Grade) */
+[data-theme="dark"],
+.dark {
+  --bg-canvas: #09090b;
+  --bg-surface: #101217;
+  --bg-subtle: #171a22;
+  --bg-muted: #202530;
+  --bg-inverse: #f8fafc;
+
+  --border-subtle: rgba(255, 255, 255, 0.07);
+  --border-default: rgba(255, 255, 255, 0.11);
+  --border-strong: rgba(255, 255, 255, 0.20);
+  --border-focus: #14b8a6;
+
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+  --text-subtle: #475569;
+  --text-inverse: #09090b;
+
+  /* Refined Teal Accent in Dark Mode */
+  --brand-primary: #14b8a6;
+  --brand-primary-hover: #2dd4bf;
+  --brand-primary-subtle: rgba(20, 184, 166, 0.14);
+  --brand-primary-border: rgba(20, 184, 166, 0.28);
+  --brand-primary-text: #2dd4bf;
+
+  --accent-zinc: #171a22;
+  --accent-zinc-hover: #202530;
+
+  /* Semantic Alerts in Dark Mode */
+  --success: #34d399;
+  --success-subtle: rgba(16, 185, 129, 0.15);
+  --success-border: rgba(16, 185, 129, 0.3);
+
+  --warning: #fbbf24;
+  --warning-subtle: rgba(245, 158, 11, 0.15);
+  --warning-border: rgba(245, 158, 11, 0.3);
+
+  --error: #fb7185;
+  --error-subtle: rgba(244, 63, 94, 0.15);
+  --error-border: rgba(244, 63, 94, 0.3);
+
+  --info: #38bdf8;
+  --info-subtle: rgba(14, 165, 233, 0.15);
+  --info-border: rgba(14, 165, 233, 0.3);
+
+  /* Logo Switcher Visibility */
+  --logo-light-display: none;
+  --logo-dark-display: block;
+
+  /* Dark Theme Shadows */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.6), 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 14px -2px rgba(0, 0, 0, 0.7), 0 2px 6px -1px rgba(0, 0, 0, 0.5);
+  --shadow-lg: 0 16px 32px -8px rgba(0, 0, 0, 0.85), 0 6px 12px -2px rgba(0, 0, 0, 0.6);
+  --shadow-bezel: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 1px 3px rgba(0, 0, 0, 0.6);
 }

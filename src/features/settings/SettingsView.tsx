@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { LearnerProfile, AISettings } from '../../lib/types';
 import { saveLearnerProfile, saveAISettings, saveAISettingsAsync, loadAISettings, resetAllData } from '../../lib/storage';
+import { testAIConnection, getDefaultModelForProvider } from '../../lib/aiService';
 
 interface SettingsViewProps {
   profile: LearnerProfile;
@@ -40,6 +41,29 @@ export const SettingsView = ({
 
   // Key Visibility toggle for user's personal AI key
   const [showApiKey, setShowApiKey] = useState(false);
+
+  // Connection Test State
+  const [testState, setTestState] = useState<{
+    loading: boolean;
+    result: { success: boolean; model: string; message: string } | null;
+  }>({ loading: false, result: null });
+
+  const handleTestConnection = async () => {
+    if (!aiSettings.apiKey && aiSettings.provider !== 'offline_deterministic' && !aiSettings.workerUrl) {
+      setTestState({
+        loading: false,
+        result: {
+          success: false,
+          model: aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider),
+          message: 'Please paste your API key first before testing.',
+        },
+      });
+      return;
+    }
+    setTestState({ loading: true, result: null });
+    const res = await testAIConnection(aiSettings);
+    setTestState({ loading: false, result: res });
+  };
 
   const handleSave = async () => {
     setIsSaving(true);
@@ -90,31 +114,54 @@ export const SettingsView = ({
 
   const aiProviders = [
     {
+      id: 'gemini',
+      name: 'Google Gemini',
+      tier: 'Google AI Studio Free Tier',
+      model: 'Gemini 3.8 / 3.5 / 2.5 Flash',
+      speed: '1M+ Context • Multimodal',
+      url: 'https://aistudio.google.com/app/apikey',
+      badge: 'Recommended',
+      presets: ['gemini-3.8-flash', 'gemini-3.5-flash', 'gemini-3.5-pro', 'gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'],
+    },
+    {
       id: 'groq',
       name: 'Groq Cloud',
       tier: '100% Free Tier',
       model: 'Llama 3.3 70B Versatile',
-      speed: '~350 tok/sec',
+      speed: '~350 tok/sec • Ultra-Low Latency',
       url: 'https://console.groq.com/keys',
-      badge: 'Recommended',
+      badge: 'Ultra-Fast',
+      presets: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
     },
     {
-      id: 'gemini',
-      name: 'Google Gemini',
-      tier: 'Free Tier',
-      model: 'Gemini 1.5 Flash',
-      speed: 'High Context',
-      url: 'https://aistudio.google.com/app/apikey',
-      badge: '1M Context',
+      id: 'anthropic',
+      name: 'Anthropic Claude',
+      tier: 'Direct API Key',
+      model: 'Claude Sonnet 5 / Claude 3.7 Sonnet',
+      speed: 'Elite Pedagogical Reasoning',
+      url: 'https://console.anthropic.com/settings/keys',
+      badge: 'Elite Model',
+      presets: ['claude-sonnet-5', 'claude-3-7-sonnet-20250219', 'claude-haiku-4-5', 'claude-opus-5', 'claude-3-5-sonnet-latest'],
+    },
+    {
+      id: 'openai',
+      name: 'OpenAI Direct',
+      tier: 'Direct API Key',
+      model: 'GPT-6 Astra / GPT-5.6 Terra / GPT-5.4',
+      speed: 'Industry Standard',
+      url: 'https://platform.openai.com/api-keys',
+      badge: 'Standard',
+      presets: ['gpt-5.6-terra', 'gpt-5.4-mini', 'gpt-6-astra', 'gpt-4.1-mini', 'gpt-4o-mini', 'gpt-4o'],
     },
     {
       id: 'openrouter',
       name: 'OpenRouter',
-      tier: 'Multi-Model Free',
-      model: 'Free Router Models',
-      speed: 'Flexible',
+      tier: 'Multi-Model Hub',
+      model: 'Free & Commercial Router',
+      speed: 'Flexible Model Switching',
       url: 'https://openrouter.ai/keys',
       badge: 'Aggregator',
+      presets: ['google/gemini-2.5-flash', 'meta-llama/llama-3.3-70b-instruct:free', 'anthropic/claude-3.7-sonnet', 'openai/gpt-4o-mini'],
     },
     {
       id: 'offline_deterministic',
@@ -124,6 +171,7 @@ export const SettingsView = ({
       speed: 'Instant (0ms)',
       url: '',
       badge: 'Private',
+      presets: [],
     },
   ];
 
@@ -230,14 +278,14 @@ export const SettingsView = ({
                       padding: '0.75rem 0.5rem',
                       borderRadius: 'var(--radius-md)',
                       border: `1.5px solid ${isSelected ? 'var(--brand-primary)' : 'var(--border-default)'}`,
-                      backgroundColor: isSelected ? 'var(--brand-primary-subtle)' : '#ffffff',
+                      backgroundColor: isSelected ? 'var(--brand-primary-subtle)' : 'var(--bg-surface)',
                       color: isSelected ? 'var(--brand-primary)' : 'var(--text-primary)',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
                       gap: '0.2rem',
-                      transition: 'all var(--transition-fast)',
+                      transition: 'border-color 140ms var(--ease-out), background-color 140ms var(--ease-out), color 140ms var(--ease-out)',
                     }}
                   >
                     <span style={{ fontSize: '1.05rem', fontWeight: 700 }}>
@@ -282,11 +330,11 @@ export const SettingsView = ({
                         fontWeight: isActive ? 700 : 500,
                         borderRadius: 'calc(var(--radius-md) - 3px)',
                         border: 'none',
-                        backgroundColor: isActive ? '#ffffff' : 'transparent',
+                        backgroundColor: isActive ? 'var(--bg-surface)' : 'transparent',
                         color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                        boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.06)' : 'none',
+                        boxShadow: isActive ? 'var(--shadow-xs)' : 'none',
                         cursor: 'pointer',
-                        transition: 'all var(--transition-fast)',
+                        transition: 'background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out)',
                       }}
                     >
                       {mod === 'academic' ? 'IELTS Academic' : 'General Training'}
@@ -340,7 +388,7 @@ export const SettingsView = ({
                 padding: '0 1rem',
                 border: '1px solid var(--border-default)',
                 borderRadius: 'var(--radius-md)',
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--bg-surface)',
               }}>
                 <Clock size={16} color="var(--text-muted)" />
                 <input
@@ -405,14 +453,14 @@ export const SettingsView = ({
                       padding: '1.25rem',
                       borderRadius: 'var(--radius-md)',
                       border: `1.5px solid ${isActive ? 'var(--brand-primary)' : 'var(--border-default)'}`,
-                      backgroundColor: isActive ? 'var(--brand-primary-subtle)' : '#ffffff',
+                      backgroundColor: isActive ? 'var(--brand-primary-subtle)' : 'var(--bg-surface)',
                       cursor: 'pointer',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '0.75rem',
                       position: 'relative',
-                      transition: 'all var(--transition-fast)',
-                      boxShadow: isActive ? '0 4px 14px rgba(13, 148, 136, 0.08)' : 'none',
+                      transition: 'border-color 140ms var(--ease-out), background-color 140ms var(--ease-out), box-shadow 140ms var(--ease-out)',
+                      boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -503,18 +551,23 @@ export const SettingsView = ({
                 <input
                   type={showApiKey ? 'text' : 'password'}
                   placeholder={
-                    aiSettings.provider === 'groq' ? 'gsk_...' :
-                    aiSettings.provider === 'openrouter' ? 'sk-or-...' :
-                    aiSettings.provider === 'gemini' ? 'AIzaSy...' : 'Key...'
+                    aiSettings.provider === 'gemini' ? 'AIzaSy... (Google AI Studio key)' :
+                    aiSettings.provider === 'groq' ? 'gsk_... (Groq Console key)' :
+                    aiSettings.provider === 'anthropic' ? 'sk-ant-api03-... (Anthropic key)' :
+                    aiSettings.provider === 'openai' ? 'sk-proj-... (OpenAI key)' :
+                    aiSettings.provider === 'openrouter' ? 'sk-or-v1-... (OpenRouter key)' : 'API Key...'
                   }
                   value={aiSettings.apiKey}
-                  onChange={e => setAiSettings({ ...aiSettings, apiKey: e.target.value })}
+                  onChange={e => {
+                    setAiSettings({ ...aiSettings, apiKey: e.target.value });
+                    setTestState({ loading: false, result: null });
+                  }}
                   className="input"
                   style={{
                     paddingRight: '44px',
                     fontFamily: 'var(--font-mono)',
                     fontSize: '0.88rem',
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--bg-surface)',
                   }}
                 />
                 <button
@@ -535,6 +588,139 @@ export const SettingsView = ({
                 >
                   {showApiKey ? <EyeOff size={16} /> : <Eye size={16} />}
                 </button>
+              </div>
+
+              {/* Model Engine Selector & Custom Override */}
+              <div style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.65rem',
+                backgroundColor: 'var(--bg-surface)',
+                padding: '0.85rem 1rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-subtle)',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <Sparkles size={13} color="var(--brand-primary)" />
+                    <span>Model Engine / Checkpoint:</span>
+                  </label>
+                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Active: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)}</strong>
+                  </span>
+                </div>
+
+                {/* Preset Pills */}
+                {(() => {
+                  const activeProv = aiProviders.find(p => p.id === aiSettings.provider);
+                  const presets = activeProv?.presets || [];
+                  if (presets.length === 0) return null;
+                  return (
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                      {presets.map(modelName => {
+                        const isChosen = (aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)) === modelName;
+                        return (
+                          <button
+                            key={modelName}
+                            type="button"
+                            onClick={() => {
+                              setAiSettings({ ...aiSettings, modelOverride: modelName });
+                              setTestState({ loading: false, result: null });
+                            }}
+                            className="btn btn-sm"
+                            style={{
+                              padding: '0.25rem 0.65rem',
+                              fontSize: '0.78rem',
+                              fontFamily: 'var(--font-mono)',
+                              fontWeight: isChosen ? 700 : 500,
+                              backgroundColor: isChosen ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                              color: isChosen ? '#ffffff' : 'var(--text-secondary)',
+                              border: `1px solid ${isChosen ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
+                              borderRadius: 'var(--radius-sm)',
+                              transition: 'all 140ms ease',
+                            }}
+                          >
+                            {modelName}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  );
+                })()}
+
+                {/* Custom Model Override Input */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Custom Model ID:</span>
+                  <input
+                    type="text"
+                    placeholder={`e.g. ${getDefaultModelForProvider(aiSettings.provider)}`}
+                    value={aiSettings.modelOverride || ''}
+                    onChange={e => {
+                      setAiSettings({ ...aiSettings, modelOverride: e.target.value.trim() });
+                      setTestState({ loading: false, result: null });
+                    }}
+                    className="input"
+                    style={{
+                      padding: '0.35rem 0.65rem',
+                      fontSize: '0.8rem',
+                      fontFamily: 'var(--font-mono)',
+                      backgroundColor: 'var(--bg-canvas)',
+                      flex: 1,
+                    }}
+                  />
+                  {aiSettings.modelOverride && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setAiSettings({ ...aiSettings, modelOverride: undefined });
+                        setTestState({ loading: false, result: null });
+                      }}
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}
+                      title="Reset to default model"
+                    >
+                      Reset Default
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Test Connection Button & Status Output */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '0.75rem',
+                paddingTop: '0.4rem',
+              }}>
+                <button
+                  type="button"
+                  onClick={handleTestConnection}
+                  disabled={testState.loading}
+                  className="btn btn-secondary btn-sm"
+                  style={{ fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.45rem' }}
+                >
+                  <Zap size={14} color="var(--brand-primary)" />
+                  <span>{testState.loading ? 'Testing API...' : `Test ${aiSettings.provider.toUpperCase()} Connection`}</span>
+                </button>
+
+                {testState.result && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '0.45rem',
+                    fontSize: '0.8rem',
+                    padding: '0.35rem 0.75rem',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: testState.result.success ? 'var(--brand-primary-subtle)' : 'rgba(239, 68, 68, 0.1)',
+                    color: testState.result.success ? 'var(--brand-primary)' : 'var(--error)',
+                    border: `1px solid ${testState.result.success ? 'rgba(13, 148, 136, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                  }}>
+                    {testState.result.success ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                    <span>{testState.result.message}</span>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.74rem', color: 'var(--text-muted)', flexWrap: 'wrap', gap: '0.4rem' }}>

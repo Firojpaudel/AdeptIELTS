@@ -23,6 +23,7 @@ import {
 } from '../lib/storage';
 import { getSupabaseClient, isSupabaseConfigured } from '../lib/supabaseClient';
 import { registerTursoAccount, loginTursoAccount, isTursoConfigured } from '../lib/tursoClient';
+import { AdeptLogo } from './AdeptLogo';
 
 export interface AuthModalProps {
   isOpen: boolean;
@@ -244,8 +245,8 @@ export const AuthModal = ({
       zIndex: 1000,
       padding: '1rem',
     }}>
-      <div className="double-bezel" style={{ width: '100%', maxWidth: '480px' }}>
-        <div className="double-bezel-inner" style={{ padding: '2rem', position: 'relative' }}>
+      <div className="double-bezel" style={{ width: '100%', maxWidth: '480px', maxHeight: '94vh', display: 'flex', flexDirection: 'column' }}>
+        <div className="double-bezel-inner" style={{ padding: 'clamp(1.25rem, 5vw, 2rem)', position: 'relative', overflowY: 'auto' }}>
 
           {/* Close button */}
           <button
@@ -271,6 +272,9 @@ export const AuthModal = ({
 
           {/* Header */}
           <div style={{ marginBottom: '1.5rem' }}>
+            <div style={{ marginBottom: '0.85rem' }}>
+              <AdeptLogo variant="full" height={32} />
+            </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.35rem' }}>
               <span className="badge badge-brand" style={{ fontSize: '0.72rem', display: 'inline-flex', alignItems: 'center', gap: '0.3rem' }}>
                 {hasTurso ? <Database size={12} /> : hasCloud ? <Cloud size={12} /> : <ShieldCheck size={12} />}
@@ -305,15 +309,15 @@ export const AuthModal = ({
                 fontWeight: 600,
                 borderRadius: 'calc(var(--radius-md) - 2px)',
                 border: 'none',
-                background: authMode === 'signup' ? '#ffffff' : 'transparent',
+                background: authMode === 'signup' ? 'var(--bg-surface)' : 'transparent',
                 color: authMode === 'signup' ? 'var(--text-primary)' : 'var(--text-muted)',
-                boxShadow: authMode === 'signup' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                boxShadow: authMode === 'signup' ? 'var(--shadow-xs)' : 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.35rem',
-                transition: 'all var(--transition-fast)',
+                transition: 'background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out)',
               }}
             >
               <UserPlus size={14} />
@@ -328,15 +332,15 @@ export const AuthModal = ({
                 fontWeight: 600,
                 borderRadius: 'calc(var(--radius-md) - 2px)',
                 border: 'none',
-                background: authMode === 'signin' ? '#ffffff' : 'transparent',
+                background: authMode === 'signin' ? 'var(--bg-surface)' : 'transparent',
                 color: authMode === 'signin' ? 'var(--text-primary)' : 'var(--text-muted)',
-                boxShadow: authMode === 'signin' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                boxShadow: authMode === 'signin' ? 'var(--shadow-xs)' : 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 gap: '0.35rem',
-                transition: 'all var(--transition-fast)',
+                transition: 'background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out)',
               }}
             >
               <LogIn size={14} />

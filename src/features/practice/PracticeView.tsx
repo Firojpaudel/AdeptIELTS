@@ -316,15 +316,15 @@ export const PracticeView = ({
                   style={{
                     padding: '0.35rem 0.75rem',
                     borderRadius: 'calc(var(--radius-md) - 2px)',
-                    backgroundColor: isActive ? '#ffffff' : 'transparent',
+                    backgroundColor: isActive ? 'var(--bg-surface)' : 'transparent',
                     color: isActive ? 'var(--text-primary)' : 'var(--text-muted)',
                     fontWeight: isActive ? 600 : 500,
                     fontSize: '0.82rem',
-                    boxShadow: isActive ? '0 1px 2px rgba(0, 0, 0, 0.06)' : 'none',
+                    boxShadow: isActive ? 'var(--shadow-xs)' : 'none',
                     border: 'none',
                     cursor: 'pointer',
                     textTransform: 'capitalize',
-                    transition: 'all var(--transition-fast)',
+                    transition: 'background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out)',
                   }}
                 >
                   {s}
@@ -349,20 +349,23 @@ export const PracticeView = ({
         </div>
       </div>
 
-      {/* Main Two-Column Split Layout for Reading / Single Column for Listening */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: currentQ.passageText ? 'minmax(0, 1.15fr) minmax(0, 1fr)' : '1fr',
-        gap: 'var(--space-6)',
-        alignItems: 'start',
-      }}>
+      {/* Main Two-Column Split Layout for Reading / Single Column for Listening (Stacks on screens <= 900px) */}
+      <div
+        className={currentQ.passageText ? 'responsive-split-grid' : ''}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: currentQ.passageText ? undefined : '1fr',
+          gap: 'var(--space-6)',
+          alignItems: 'start',
+        }}
+      >
         {/* Left Column: Authentic Passage with Evidence Highlighting */}
         {currentQ.passageText && (
           <div className="double-bezel">
             <div className="double-bezel-inner" style={{
               maxHeight: '680px',
               overflowY: 'auto',
-              padding: '1.5rem',
+              padding: 'clamp(1rem, 4vw, 1.5rem)',
               display: 'flex',
               flexDirection: 'column',
               gap: 'var(--space-4)',

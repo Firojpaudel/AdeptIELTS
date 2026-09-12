@@ -10,19 +10,21 @@ import {
   FileCheck2,
   Globe2,
   Award,
-  Sparkles,
   ChevronRight,
   GraduationCap,
 } from 'lucide-react';
 import { ActiveTab } from '../../components/AppShell';
+import { LearnerProfile } from '../../lib/types';
 
 interface HomeViewProps {
+  profile?: LearnerProfile | null;
   onStartSignUp: () => void;
   onOpenSignIn: () => void;
   onNavigateTab: (tab: ActiveTab) => void;
 }
 
 export const HomeView = ({
+  profile,
   onStartSignUp,
   onOpenSignIn,
   onNavigateTab,
@@ -43,9 +45,9 @@ export const HomeView = ({
         flexDirection: 'column',
         alignItems: 'center',
         textAlign: 'center',
-        paddingTop: 'clamp(5rem, 9vw, 8rem)',
-        paddingBottom: 'clamp(3.5rem, 6vw, 5.5rem)',
-        gap: '2.5rem',
+        paddingTop: 'clamp(4.5rem, 8vw, 7rem)',
+        paddingBottom: 'clamp(3rem, 5vw, 4.5rem)',
+        gap: '2rem',
       }}>
         {/* Academic Provenance Marker */}
         <div style={{
@@ -92,52 +94,83 @@ export const HomeView = ({
         </p>
 
         {/* CTA Button Group with Emil Kowalski Button-in-Button Physics */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '1.5rem',
-          justifyContent: 'center',
-          marginTop: '1rem',
-        }}>
-          <button
-            onClick={onStartSignUp}
-            className="btn btn-primary btn-lg"
-            style={{
-              padding: '0.9rem 1.1rem 0.9rem 2rem',
-              borderRadius: 'var(--radius-full)',
-              gap: '1rem',
-              fontSize: '1rem',
-              fontWeight: 600,
-            }}
-          >
-            <span>Create Candidate Profile</span>
-            <span style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              transition: 'transform 150ms ease-out',
-            }}>
-              <ArrowRight size={15} color="#ffffff" />
-            </span>
-          </button>
+        {profile ? (
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1.25rem',
+            justifyContent: 'center',
+            marginTop: '0.75rem',
+          }}>
+            <button
+              onClick={() => onNavigateTab('dashboard')}
+              className="btn btn-primary btn-lg"
+              style={{
+                padding: '0.85rem 1.25rem 0.85rem 2rem',
+                borderRadius: 'var(--radius-full)',
+                gap: '0.85rem',
+                fontSize: '1rem',
+                fontWeight: 650,
+              }}
+            >
+              <span>Enter Candidate Dashboard</span>
+              <span className="btn-arrow-badge">
+                <ArrowRight size={16} className="btn-arrow-icon" />
+              </span>
+            </button>
 
-          <button
-            onClick={onOpenSignIn}
-            className="btn btn-secondary btn-lg"
-            style={{
-              padding: '0.9rem 2rem',
-              borderRadius: 'var(--radius-full)',
-              fontWeight: 600,
-              fontSize: '1rem',
-            }}
-          >
-            Candidate Sign In
-          </button>
-        </div>
+            <button
+              onClick={() => onNavigateTab('progress')}
+              className="btn btn-secondary btn-lg"
+              style={{
+                padding: '0.85rem 2rem',
+                borderRadius: 'var(--radius-full)',
+                fontWeight: 600,
+                fontSize: '1rem',
+              }}
+            >
+              View Deep Diagnostics & Mastery
+            </button>
+          </div>
+        ) : (
+          <div style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: '1.25rem',
+            justifyContent: 'center',
+            marginTop: '0.75rem',
+          }}>
+            <button
+              onClick={onStartSignUp}
+              className="btn btn-primary btn-lg"
+              style={{
+                padding: '0.85rem 1.15rem 0.85rem 2rem',
+                borderRadius: 'var(--radius-full)',
+                gap: '0.85rem',
+                fontSize: '1rem',
+                fontWeight: 650,
+              }}
+            >
+              <span>Create Candidate Profile</span>
+              <span className="btn-arrow-badge">
+                <ArrowRight size={16} className="btn-arrow-icon" />
+              </span>
+            </button>
+
+            <button
+              onClick={onOpenSignIn}
+              className="btn btn-secondary btn-lg"
+              style={{
+                padding: '0.85rem 2rem',
+                borderRadius: 'var(--radius-full)',
+                fontWeight: 600,
+                fontSize: '1rem',
+              }}
+            >
+              Candidate Sign In
+            </button>
+          </div>
+        )}
 
         {/* Trust Badges with Generous Whitespace */}
         <div style={{
@@ -178,25 +211,16 @@ export const HomeView = ({
 
         <div style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-          gap: '1.5rem',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 300px), 1fr))',
+          gap: '1.25rem',
         }}>
           
           {/* Card 1: Adaptive Practice */}
-          <div className="card card-hover" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: 'var(--brand-primary-subtle)',
-              color: 'var(--brand-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="feature-badge feature-badge-teal">
               <BookOpen size={20} />
             </div>
-            <div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '1.15rem', marginBottom: '0.4rem' }}>
                 Adaptive Reading & Listening
               </h3>
@@ -207,27 +231,18 @@ export const HomeView = ({
             <button
               onClick={() => onNavigateTab('practice')}
               className="btn btn-ghost btn-sm"
-              style={{ alignSelf: 'flex-start', paddingLeft: 0, color: 'var(--brand-primary)', fontWeight: 600 }}
+              style={{ marginTop: 'auto', alignSelf: 'flex-start', paddingLeft: 0, color: 'var(--brand-primary)', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
             >
-              Explore reading drills <ChevronRight size={14} />
+              Explore reading drills <ChevronRight size={14} className="feature-link-arrow" />
             </button>
           </div>
 
           {/* Card 2: Writing Coach */}
-          <div className="card card-hover" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#fffbeb',
-              color: '#d97706',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="feature-badge feature-badge-amber">
               <PenTool size={20} />
             </div>
-            <div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '1.15rem', marginBottom: '0.4rem' }}>
                 4-Criteria Writing Coach
               </h3>
@@ -238,27 +253,18 @@ export const HomeView = ({
             <button
               onClick={() => onNavigateTab('writing')}
               className="btn btn-ghost btn-sm"
-              style={{ alignSelf: 'flex-start', paddingLeft: 0, color: '#d97706', fontWeight: 600 }}
+              style={{ marginTop: 'auto', alignSelf: 'flex-start', paddingLeft: 0, color: 'var(--warning)', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
             >
-              Open essay coach <ChevronRight size={14} />
+              Open essay coach <ChevronRight size={14} className="feature-link-arrow" />
             </button>
           </div>
 
           {/* Card 3: Speaking Examiner */}
-          <div className="card card-hover" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#eff6ff',
-              color: '#2563eb',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="feature-badge feature-badge-blue">
               <Mic size={20} />
             </div>
-            <div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '1.15rem', marginBottom: '0.4rem' }}>
                 Speaking Mock Simulator
               </h3>
@@ -269,27 +275,18 @@ export const HomeView = ({
             <button
               onClick={() => onNavigateTab('speaking')}
               className="btn btn-ghost btn-sm"
-              style={{ alignSelf: 'flex-start', paddingLeft: 0, color: '#2563eb', fontWeight: 600 }}
+              style={{ marginTop: 'auto', alignSelf: 'flex-start', paddingLeft: 0, color: '#3b82f6', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
             >
-              Start speaking test <ChevronRight size={14} />
+              Start speaking test <ChevronRight size={14} className="feature-link-arrow" />
             </button>
           </div>
 
           {/* Card 4: Spaced Vocabulary Deck */}
-          <div className="card card-hover" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#f5f3ff',
-              color: '#7c3aed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="feature-badge feature-badge-purple">
               <Brain size={20} />
             </div>
-            <div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '1.15rem', marginBottom: '0.4rem' }}>
                 Academic Word List (AWL) Flashcards
               </h3>
@@ -300,27 +297,18 @@ export const HomeView = ({
             <button
               onClick={() => onNavigateTab('vocabulary')}
               className="btn btn-ghost btn-sm"
-              style={{ alignSelf: 'flex-start', paddingLeft: 0, color: '#7c3aed', fontWeight: 600 }}
+              style={{ marginTop: 'auto', alignSelf: 'flex-start', paddingLeft: 0, color: '#8b5cf6', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
             >
-              Browse vocabulary deck <ChevronRight size={14} />
+              Browse vocabulary deck <ChevronRight size={14} className="feature-link-arrow" />
             </button>
           </div>
 
           {/* Card 5: Strategy Lessons */}
-          <div className="card card-hover" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#ecfdf5',
-              color: '#059669',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}>
+          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="feature-badge feature-badge-emerald">
               <GraduationCap size={20} />
             </div>
-            <div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '1.15rem', marginBottom: '0.4rem' }}>
                 Methodology & Strategy Lessons
               </h3>
@@ -331,28 +319,18 @@ export const HomeView = ({
             <button
               onClick={() => onNavigateTab('learn')}
               className="btn btn-ghost btn-sm"
-              style={{ alignSelf: 'flex-start', paddingLeft: 0, color: '#059669', fontWeight: 600 }}
+              style={{ marginTop: 'auto', alignSelf: 'flex-start', paddingLeft: 0, color: 'var(--success)', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
             >
-              Read lessons <ChevronRight size={14} />
+              Read lessons <ChevronRight size={14} className="feature-link-arrow" />
             </button>
           </div>
 
           {/* Card 6: Master Resources Directory */}
-          <div className="card card-hover" style={{ padding: '1.75rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: 'var(--radius-md)',
-              backgroundColor: '#f8fafc',
-              color: 'var(--text-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              border: '1px solid var(--border-default)',
-            }}>
+          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div className="feature-badge feature-badge-slate">
               <Globe2 size={20} />
             </div>
-            <div>
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
               <h3 style={{ fontSize: '1.15rem', marginBottom: '0.4rem' }}>
                 26+ Verified Master Resources
               </h3>
@@ -363,9 +341,9 @@ export const HomeView = ({
             <button
               onClick={() => onNavigateTab('resources')}
               className="btn btn-ghost btn-sm"
-              style={{ alignSelf: 'flex-start', paddingLeft: 0, color: 'var(--text-primary)', fontWeight: 600 }}
+              style={{ marginTop: 'auto', alignSelf: 'flex-start', paddingLeft: 0, color: 'var(--text-primary)', fontWeight: 600, whiteSpace: 'nowrap', display: 'inline-flex', alignItems: 'center' }}
             >
-              View directory <ChevronRight size={14} />
+              View directory <ChevronRight size={14} className="feature-link-arrow" />
             </button>
           </div>
 
@@ -382,19 +360,39 @@ export const HomeView = ({
           textAlign: 'center',
           gap: '1rem',
         }}>
-          <h2 style={{ fontSize: '1.6rem', fontWeight: 750, letterSpacing: '-0.025em' }}>
-            Ready to determine your true IELTS baseline?
-          </h2>
-          <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', maxWidth: '560px' }}>
-            Create your candidate profile today. All practice attempts, essay feedback, and vocabulary drills are tracked with zero data loss.
-          </p>
-          <button
-            onClick={onStartSignUp}
-            className="btn btn-primary btn-lg"
-            style={{ marginTop: '0.5rem', borderRadius: 'var(--radius-full)', padding: '0.75rem 2rem' }}
-          >
-            Get Started Free
-          </button>
+          {profile ? (
+            <>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 750, letterSpacing: '-0.025em' }}>
+                Ready to continue your Band {profile.targetBand.toFixed(1)} preparation?
+              </h2>
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', maxWidth: '560px' }}>
+                All your reading & listening attempts, 4-criteria AI writing critique, and spaced vocabulary reviews are stored in your active session.
+              </p>
+              <button
+                onClick={() => onNavigateTab('dashboard')}
+                className="btn btn-primary btn-lg"
+                style={{ marginTop: '0.5rem', borderRadius: 'var(--radius-full)', padding: '0.75rem 2rem' }}
+              >
+                Resume Candidate Dashboard
+              </button>
+            </>
+          ) : (
+            <>
+              <h2 style={{ fontSize: '1.6rem', fontWeight: 750, letterSpacing: '-0.025em' }}>
+                Ready to determine your true IELTS baseline?
+              </h2>
+              <p style={{ fontSize: '0.95rem', color: 'var(--text-secondary)', maxWidth: '560px' }}>
+                Create your candidate profile today. All practice attempts, essay feedback, and vocabulary drills are tracked with zero data loss.
+              </p>
+              <button
+                onClick={onStartSignUp}
+                className="btn btn-primary btn-lg"
+                style={{ marginTop: '0.5rem', borderRadius: 'var(--radius-full)', padding: '0.75rem 2rem' }}
+              >
+                Get Started Free
+              </button>
+            </>
+          )}
         </div>
       </div>
 

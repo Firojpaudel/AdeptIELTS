@@ -16,7 +16,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { LearnerProfile } from '../lib/types';
-import { loadAllProfiles, createNewProfile, setActiveProfileId } from '../lib/storage';
+import { loadAllProfiles, createNewProfile, setActiveProfileId, saveLearnerProfile } from '../lib/storage';
 import { isTursoConfigured } from '../lib/tursoClient';
 import { StudyCalendarModal } from './StudyCalendarModal';
 import { recalculateAndSaveStreak } from '../lib/studyTracker';
@@ -105,7 +105,7 @@ export const CandidateProfileModal = ({
         alignItems: 'center',
         justifyContent: 'center',
         zIndex: 1000,
-        padding: '1.25rem',
+        padding: 'clamp(0.5rem, 2vw, 1.25rem)',
       }}
     >
       <div
@@ -113,16 +113,20 @@ export const CandidateProfileModal = ({
         style={{
           width: '100%',
           maxWidth: '520px',
+          maxHeight: '94vh',
+          display: 'flex',
+          flexDirection: 'column',
           boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08)',
         }}
       >
         <div
           className="double-bezel-inner"
           style={{
-            padding: '1.75rem',
+            padding: 'clamp(1.25rem, 4vw, 1.75rem)',
             position: 'relative',
             display: 'flex',
             flexDirection: 'column',
+            overflowY: 'auto',
             gap: '1.25rem',
           }}
         >
@@ -209,13 +213,54 @@ export const CandidateProfileModal = ({
               paddingTop: '0.75rem',
               borderTop: '1px solid var(--border-subtle)',
             }}>
-              <div style={{ backgroundColor: 'var(--bg-surface)', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
-                <div style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-                  Target Band
+              <div style={{
+                backgroundColor: 'var(--bg-surface)',
+                padding: '0.55rem 0.75rem',
+                borderRadius: 'var(--radius-md)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.2rem',
+              }}>
+                <div style={{
+                  fontSize: '0.66rem',
+                  fontWeight: 600,
+                  color: 'var(--text-muted)',
+                  textTransform: 'uppercase',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                }}>
+                  <span>Target Band</span>
+                  <span style={{ fontSize: '0.62rem', color: 'var(--brand-primary)' }}>Change</span>
                 </div>
-                <div className="font-mono" style={{ fontSize: '1.15rem', fontWeight: 750, color: 'var(--brand-primary)', marginTop: '0.15rem' }}>
-                  Band {currentProfile.targetBand.toFixed(1)}
-                </div>
+                <select
+                  value={currentProfile.targetBand}
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    const updated = { ...currentProfile, targetBand: val };
+                    saveLearnerProfile(updated);
+                    onProfileChanged(updated);
+                  }}
+                  style={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    color: 'var(--brand-primary)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '1.1rem',
+                    fontWeight: 750,
+                    cursor: 'pointer',
+                    padding: '0',
+                    outline: 'none',
+                  }}
+                  title="Click to change your target band at any time"
+                >
+                  {[5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5, 9.0].map(b => (
+                    <option key={b} value={b} style={{ backgroundColor: 'var(--bg-surface)', color: 'var(--text-primary)' }}>
+                      Band {b.toFixed(1)}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div style={{ backgroundColor: 'var(--bg-surface)', padding: '0.6rem 0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>

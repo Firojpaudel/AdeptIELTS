@@ -1,30 +1,56 @@
 import { useState } from 'react';
-import { CheckCircle2, ArrowLeft, ArrowRight, BookOpen, Award } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, ArrowRight, BookOpen, Award, Sparkles, Brain, Loader2, Copy, Check, AlertTriangle } from 'lucide-react';
 import { IELTS_QUESTIONS, IELTS_WRITING_PROMPTS } from '../../data/ieltsDataset';
 import { ExamTimer } from '../../components/ExamTimer';
 import { rawToReadingBand, calculateOverallBand, formatBand } from '../../lib/ieltsScoring';
-import { saveExamScore } from '../../lib/storage';
-import { ExamScoreRecord } from '../../lib/types';
+import { saveExamScore, recordQuestionAttempt } from '../../lib/storage';
+import { ExamScoreRecord, LearnerProfile, QuestionAttempt, Question, WritingFeedback } from '../../lib/types';
+import { generateAdaptiveQuestionsWithContext, evaluateWritingEssay } from '../../lib/aiService';
 import * as confettiPkg from 'canvas-confetti';
 const confetti = (confettiPkg as any).default || confettiPkg;
 
 interface MockExamViewProps {
   onExitMock: () => void;
+  profile?: LearnerProfile | null;
+  attempts?: QuestionAttempt[];
+  onAttemptRecorded?: (attempt: QuestionAttempt) => void;
 }
 
-export function MockExamView({ onExitMock }: MockExamViewProps) {
+export function MockExamView({ onExitMock, profile, attempts = [], onAttemptRecorded }: MockExamViewProps) {
   const [examState, setExamState] = useState<'intro' | 'active' | 'results'>('intro');
+  const [examMode, setExamMode] = useState<'adaptive_ai' | 'standard'>('adaptive_ai');
   const [currentSection, setCurrentSection] = useState<'reading' | 'writing'>('reading');
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [readingAnswers, setReadingAnswers] = useState<Record<string, string>>({});
   const [writingEssay, setWritingEssay] = useState('');
+  const [copiedModel, setCopiedModel] = useState(false);
   const [readingScore, setReadingScore] = useState<number | null>(null);
+  const [questions, setQuestions] = useState<Question[]>(IELTS_QUESTIONS.filter(q => q.skill === 'reading'));
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const [isEvaluatingWriting, setIsEvaluatingWriting] = useState(false);
+  const [writingFeedback, setWritingFeedback] = useState<WritingFeedback | null>(null);
 
-  const mockReadingQuestions = IELTS_QUESTIONS.filter(q => q.skill === 'reading');
-  const activeQ = mockReadingQuestions[currentQuestionIndex];
+  const activeQ = questions[currentQuestionIndex] || questions[0];
   const writingPrompt = IELTS_WRITING_PROMPTS[0];
 
-  const handleStartExam = () => {
+  const handleStartExam = async () => {
+    if (examMode === 'adaptive_ai' && profile) {
+      setIsGeneratingQuestions(true);
+      try {
+        const generated = await generateAdaptiveQuestionsWithContext({
+          profile,
+          attempts,
+          count: 5,
+        });
+        if (generated && generated.length > 0) {
+          setQuestions(generated);
+        }
+      } catch (e) {
+        console.warn('Adaptive generation fallback to authentic benchmark bank', e);
+      } finally {
+        setIsGeneratingQuestions(false);
+      }
+    }
     setExamState('active');
   };
 
@@ -32,44 +58,74 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
     setReadingAnswers(prev => ({ ...prev, [qId]: ans }));
   };
 
-  const handleSubmitExam = () => {
+  const handleSubmitExam = async () => {
     // Score Reading deterministically
     let correct = 0;
-    mockReadingQuestions.forEach(q => {
+    questions.forEach(q => {
       const userAns = (readingAnswers[q.id] || '').trim().toLowerCase();
       const correctAns = Array.isArray(q.correctAnswer)
         ? q.correctAnswer.map(a => a.toLowerCase())
         : [q.correctAnswer.toLowerCase()];
-      if (correctAns.includes(userAns)) correct++;
+      const isCorrect = correctAns.includes(userAns);
+      if (isCorrect) correct++;
+
+      // Log attempt into user behavioral tracking
+      if (profile) {
+        const attempt: QuestionAttempt = {
+          id: `mock-att-${Date.now()}-${q.id}`,
+          questionId: q.id,
+          skill: 'reading',
+          subskill: q.subskill || 'reading_comprehension',
+          isCorrect,
+          userAnswer: userAns,
+          timeSpentSeconds: 60,
+          timestamp: new Date().toISOString(),
+        };
+        recordQuestionAttempt(attempt, profile.id);
+        if (onAttemptRecorded) onAttemptRecorded(attempt);
+      }
     });
 
-    // Scale to standard 40-question scale for realistic band
-    const scaledRaw = Math.round((correct / mockReadingQuestions.length) * 40);
-    const band = rawToReadingBand(scaledRaw, 'academic');
-    const readingBand = band;
-    const writingBand = writingEssay.length > 200 ? 6.5 : 5.5;
-    const estimatedOverall = calculateOverallBand(readingBand, 7.0, writingBand, 6.5);
+    const scaledRaw = Math.round((correct / (questions.length || 1)) * 40);
+    const readingBand = rawToReadingBand(scaledRaw, profile?.testType || 'academic');
+    setReadingScore(readingBand);
 
-    setReadingScore(band);
+    // AI evaluate the essay if provided
+    let assessedWritingBand = 5.5;
+    if (writingEssay.trim().length > 30) {
+      setIsEvaluatingWriting(true);
+      try {
+        const feedback = await evaluateWritingEssay(writingPrompt.prompt, writingEssay, 'task2');
+        setWritingFeedback(feedback);
+        assessedWritingBand = feedback.estimated_band;
+      } catch (e) {
+        assessedWritingBand = writingEssay.length > 200 ? 6.5 : 5.5;
+      } finally {
+        setIsEvaluatingWriting(false);
+      }
+    }
+
+    const estimatedOverall = calculateOverallBand(readingBand, 7.0, assessedWritingBand, 6.5);
     setExamState('results');
 
-    // Persist Exam Score to Turso Cloud Edge Database
+    // Persist Exam Score with full behavioral breakdown to cloud database
     const examRecord: ExamScoreRecord = {
       id: `exam-${Date.now()}`,
-      userId: '', // storage.ts automatically resolves active candidate profile ID
+      userId: profile?.id || '',
       examType: 'full_mock',
       overallBand: estimatedOverall,
       readingBand,
-      writingBand,
+      writingBand: assessedWritingBand,
       listeningBand: 7.0,
       speakingBand: 6.5,
       rawScore: correct,
-      totalQuestions: mockReadingQuestions.length,
+      totalQuestions: questions.length,
       timeSpentSeconds: 3600,
       details: JSON.stringify({
         readingAnswers,
         correctCount: correct,
         essayWordCount: writingEssay.trim().split(/\s+/).filter(Boolean).length,
+        examMode,
       }),
       createdAt: new Date().toISOString(),
     };
@@ -78,7 +134,7 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
 
     try {
       confetti({ particleCount: 70, spread: 60 });
-    } catch (e) {}
+    } catch (_) {}
   };
 
   if (examState === 'intro') {
@@ -94,11 +150,71 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
           gap: '1.5rem',
         }}>
           <div>
-            <span className="badge badge-brand">Official Simulation</span>
+            <span className="badge badge-brand">
+              {examMode === 'adaptive_ai' ? '⚡ AI-Calibrated Simulation' : 'Official Cambridge Simulation'}
+            </span>
             <h1 style={{ marginTop: '0.4rem', fontSize: '1.75rem', fontWeight: 750 }}>IELTS Timed Exam Simulation</h1>
             <p style={{ marginTop: '0.4rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
               Experience strict exam conditions with timed sections, split-pane reading navigation, and zero distractions.
             </p>
+          </div>
+
+          {/* Simulation Engine Mode Selector */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Select Simulation Engine
+            </span>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
+              <button
+                type="button"
+                onClick={() => setExamMode('adaptive_ai')}
+                style={{
+                  padding: '0.95rem 1.15rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: `1.5px solid ${examMode === 'adaptive_ai' ? 'var(--brand-primary)' : 'var(--border-default)'}`,
+                  backgroundColor: examMode === 'adaptive_ai' ? 'var(--brand-primary-subtle)' : 'var(--bg-surface)',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.35rem',
+                  transition: 'all 150ms ease-out',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.92rem' }}>
+                  <Sparkles size={16} />
+                  <span>Adaptive AI Simulation</span>
+                </div>
+                <p style={{ fontSize: '0.79rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                  Synthesizes fresh passages & questions targeting your calibrated Band {profile?.targetBand.toFixed(1) || '7.0'} and past error patterns.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setExamMode('standard')}
+                style={{
+                  padding: '0.95rem 1.15rem',
+                  borderRadius: 'var(--radius-md)',
+                  border: `1.5px solid ${examMode === 'standard' ? 'var(--brand-primary)' : 'var(--border-default)'}`,
+                  backgroundColor: examMode === 'standard' ? 'var(--brand-primary-subtle)' : 'var(--bg-surface)',
+                  textAlign: 'left',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '0.35rem',
+                  transition: 'all 150ms ease-out',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.92rem' }}>
+                  <BookOpen size={16} />
+                  <span>Cambridge Benchmark</span>
+                </div>
+                <p style={{ fontSize: '0.79rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
+                  Standard fixed test paper from official Cambridge exam specifications.
+                </p>
+              </button>
+            </div>
           </div>
 
           <div style={{
@@ -113,12 +229,14 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
             <div>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>SECTION 1</div>
               <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Academic Reading</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Authentic passages & TFNG</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                {examMode === 'adaptive_ai' ? 'AI-Generated scholarly passage & questions' : 'Authentic passages & TFNG'}
+              </div>
             </div>
             <div>
               <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>SECTION 2</div>
               <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Academic Writing</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Task 2 Argumentative Essay</div>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Task 2 Argumentative Essay with AI Evaluator</div>
             </div>
           </div>
 
@@ -128,13 +246,27 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
             </span>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
             <button onClick={onExitMock} className="btn btn-secondary">
               Cancel & Return
             </button>
-            <button onClick={handleStartExam} className="btn btn-primary btn-lg" style={{ borderRadius: 'var(--radius-full)' }}>
-              <span>Begin Mock Exam</span>
-              <ArrowRight size={16} />
+            <button
+              onClick={handleStartExam}
+              disabled={isGeneratingQuestions}
+              className="btn btn-primary btn-lg"
+              style={{ borderRadius: 'var(--radius-full)', gap: '0.5rem' }}
+            >
+              {isGeneratingQuestions ? (
+                <>
+                  <Loader2 size={16} className="spin" />
+                  <span>Synthesizing Adaptive Exam...</span>
+                </>
+              ) : (
+                <>
+                  <span>Begin Mock Exam</span>
+                  <ArrowRight size={16} />
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -144,16 +276,16 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
 
   if (examState === 'results') {
     const readingBand = readingScore || 6.5;
-    const writingBand = writingEssay.length > 200 ? 6.5 : 5.5;
-    const estimatedOverall = calculateOverallBand(readingBand, 7.0, writingBand, 6.5);
+    const assessedWritingBand = writingFeedback ? writingFeedback.estimated_band : (writingEssay.length > 200 ? 6.5 : 5.5);
+    const estimatedOverall = calculateOverallBand(readingBand, 7.0, assessedWritingBand, 6.5);
 
     return (
       <div className="fade-in double-bezel" style={{
-        maxWidth: '760px',
+        maxWidth: '780px',
         margin: '2.5rem auto',
       }}>
         <div className="double-bezel-inner" style={{
-          padding: '2.5rem',
+          padding: 'clamp(1.5rem, 4vw, 2.5rem)',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.5rem',
@@ -162,12 +294,16 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
         }}>
           <Award size={48} color="var(--brand-primary)" />
           <div>
-            <span className="badge badge-brand">Exam Simulation Complete</span>
+            <span className="badge badge-brand">
+              {examMode === 'adaptive_ai' ? 'AI-Calibrated Exam Complete' : 'Exam Simulation Complete'}
+            </span>
             <h1 style={{ marginTop: '0.5rem', fontSize: '2rem' }}>
               Overall Performance: Band {formatBand(estimatedOverall)}
             </h1>
-            <p style={{ marginTop: '0.25rem', maxWidth: '500px' }}>
-              Simulation calibrated under standard IELTS scoring tables.
+            <p style={{ marginTop: '0.25rem', maxWidth: '540px', color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+              {examMode === 'adaptive_ai'
+                ? 'Simulation scored using Cambridge band tables with AI examiner evaluation of your argumentative essay.'
+                : 'Simulation calibrated under standard IELTS scoring tables.'}
             </p>
           </div>
 
@@ -176,7 +312,7 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))',
             gap: 'var(--space-4)',
-            margin: 'var(--space-4) 0',
+            margin: '0.5rem 0',
           }}>
             <div style={{ padding: 'var(--space-4)', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)' }}>
               <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Reading</div>
@@ -185,9 +321,9 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
               </div>
             </div>
             <div style={{ padding: 'var(--space-4)', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)' }}>
-              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Writing</div>
+              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Writing (AI Evaluated)</div>
               <div className="font-mono" style={{ fontWeight: 700, fontSize: '1.4rem', color: 'var(--brand-primary)' }}>
-                Band {writingBand.toFixed(1)}
+                Band {assessedWritingBand.toFixed(1)}
               </div>
             </div>
             <div style={{ padding: 'var(--space-4)', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)' }}>
@@ -197,6 +333,120 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
               </div>
             </div>
           </div>
+
+          {/* AI Writing Criteria Feedback Breakdown */}
+          {writingFeedback && (
+            <div style={{
+              width: '100%',
+              backgroundColor: 'var(--bg-subtle)',
+              border: '1px solid var(--border-default)',
+              borderRadius: 'var(--radius-md)',
+              padding: '1.25rem',
+              textAlign: 'left',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.85rem',
+            }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.92rem' }}>
+                  <Sparkles size={15} />
+                  <span>Cambridge AI Writing Examiner Diagnostic</span>
+                </div>
+                <span className="badge badge-brand" style={{ fontSize: '0.7rem' }}>
+                  Band {writingFeedback.estimated_band.toFixed(1)} Evaluated
+                </span>
+              </div>
+
+              {writingFeedback.examiner_summary && (
+                <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                  {writingFeedback.examiner_summary}
+                </p>
+              )}
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Task Response</div>
+                  <div className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Band {writingFeedback.criteria.task_response.toFixed(1)}</div>
+                </div>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Coherence & Cohesion</div>
+                  <div className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Band {writingFeedback.criteria.coherence.toFixed(1)}</div>
+                </div>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Lexical Resource</div>
+                  <div className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Band {writingFeedback.criteria.lexical_resource.toFixed(1)}</div>
+                </div>
+                <div style={{ padding: '0.5rem', backgroundColor: 'var(--bg-surface)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>Grammar & Accuracy</div>
+                  <div className="font-mono" style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Band {writingFeedback.criteria.grammar.toFixed(1)}</div>
+                </div>
+              </div>
+
+              {/* Strengths vs Flaws */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.65rem' }}>
+                <div style={{ padding: '0.65rem', backgroundColor: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 'var(--radius-sm)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--success)', fontWeight: 700, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
+                    <CheckCircle2 size={13} /> What Went Right
+                  </div>
+                  <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                    {(writingFeedback.what_went_right || writingFeedback.strengths || []).slice(0, 2).map((s, i) => (
+                      <li key={i}>{s}</li>
+                    ))}
+                  </ul>
+                </div>
+
+                <div style={{ padding: '0.65rem', backgroundColor: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)', borderRadius: 'var(--radius-sm)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--danger)', fontWeight: 700, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
+                    <AlertTriangle size={13} /> What Went Wrong
+                  </div>
+                  <ul style={{ paddingLeft: '1rem', margin: 0, fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+                    {(writingFeedback.what_went_wrong || writingFeedback.issues.map(x => x.problem)).slice(0, 2).map((w, i) => (
+                      <li key={i}>{w}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Examiner Band 8.5+ Model Solution */}
+              {writingFeedback.examiner_model_answer && (
+                <div style={{
+                  padding: '0.75rem',
+                  backgroundColor: 'var(--brand-primary-subtle)',
+                  borderRadius: 'var(--radius-sm)',
+                  border: '1px solid var(--brand-primary-border)',
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                    <span style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--brand-primary)' }}>
+                      Cambridge Examiner Model Solution (Band 8.5+)
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(writingFeedback.examiner_model_answer || '');
+                        setCopiedModel(true);
+                        setTimeout(() => setCopiedModel(false), 2000);
+                      }}
+                      className="btn btn-ghost btn-sm"
+                      style={{ fontSize: '0.7rem', padding: '0.15rem 0.45rem', gap: '0.2rem' }}
+                    >
+                      {copiedModel ? <Check size={11} color="var(--success)" /> : <Copy size={11} />}
+                      <span>{copiedModel ? 'Copied' : 'Copy'}</span>
+                    </button>
+                  </div>
+                  <div style={{
+                    maxHeight: '160px',
+                    overflowY: 'auto',
+                    fontSize: '0.78rem',
+                    lineHeight: 1.55,
+                    color: 'var(--text-primary)',
+                    whiteSpace: 'pre-wrap',
+                  }}>
+                    {writingFeedback.examiner_model_answer}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <button onClick={onExitMock} className="btn btn-primary btn-lg">
             Return to Dashboard
@@ -218,8 +468,10 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
         backgroundColor: 'var(--bg-surface)',
         border: '1px solid var(--border-default)',
         borderRadius: 'var(--radius-md)',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
       }}>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
           <button
             onClick={() => setCurrentSection('reading')}
             className={`btn btn-sm ${currentSection === 'reading' ? 'btn-primary' : 'btn-subtle'}`}
@@ -234,7 +486,7 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
           </button>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
           <ExamTimer totalSeconds={currentSection === 'reading' ? 60 * 60 : 40 * 60} onTimeExpired={handleSubmitExam} />
           <button onClick={handleSubmitExam} className="btn btn-danger btn-sm">
             End & Submit Exam
@@ -243,7 +495,7 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
       </div>
 
       {currentSection === 'reading' ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)', gap: 'var(--space-6)', alignItems: 'start' }}>
+        <div className="responsive-split-grid">
           {/* Reading Passage */}
           <div className="card" style={{ maxHeight: '720px', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: 'var(--space-3)' }}>
@@ -263,7 +515,7 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
                 QUESTION PALETTE
               </div>
               <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-                {mockReadingQuestions.map((q, idx) => {
+                {questions.map((q, idx) => {
                   const isAnswered = !!readingAnswers[q.id];
                   const isCurrent = currentQuestionIndex === idx;
 
@@ -293,7 +545,7 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
             <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)' }}>
-                  QUESTION {currentQuestionIndex + 1} OF {mockReadingQuestions.length}
+                  QUESTION {currentQuestionIndex + 1} OF {questions.length}
                 </span>
                 <span className="badge badge-neutral">{activeQ.questionType.replace(/_/g, ' ')}</span>
               </div>
@@ -349,8 +601,8 @@ export function MockExamView({ onExitMock }: MockExamViewProps) {
                 </button>
 
                 <button
-                  onClick={() => setCurrentQuestionIndex(Math.min(mockReadingQuestions.length - 1, currentQuestionIndex + 1))}
-                  disabled={currentQuestionIndex === mockReadingQuestions.length - 1}
+                  onClick={() => setCurrentQuestionIndex(Math.min(questions.length - 1, currentQuestionIndex + 1))}
+                  disabled={currentQuestionIndex === questions.length - 1}
                   className="btn btn-secondary btn-sm"
                 >
                   <span>Next</span>

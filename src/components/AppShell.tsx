@@ -21,7 +21,11 @@ import {
   UserPlus,
   LogIn,
   UserCheck,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from '../context/ThemeContext';
+import { AdeptLogo } from './AdeptLogo';
 import { LearnerProfile } from '../lib/types';
 import { AuthModal } from './AuthModal';
 import { CandidateProfileModal } from './CandidateProfileModal';
@@ -64,6 +68,7 @@ export const AppShell = ({
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const openAuth = (mode: 'signin' | 'signup' = 'signup') => {
     if (onOpenAuthModal) {
@@ -88,34 +93,44 @@ export const AppShell = ({
     { id: 'home', label: 'Platform Home', icon: <Home size={18} />, sectionLabel: 'Overview' },
     { id: 'dashboard', label: 'Candidate Dashboard', icon: <LayoutDashboard size={18} />, requiresAuth: true },
 
-    // 2. Study & Foundations (Input)
-    { id: 'resources', label: 'Study Library & Books', icon: <Library size={18} />, sectionLabel: 'Learn & Study' },
-    { id: 'learn', label: 'Strategy Lessons', icon: <GraduationCap size={18} /> },
-    { id: 'vocabulary', label: 'Vocabulary Queue', icon: <SpellCheck size={18} />, requiresAuth: true },
+    // 2. Foundations & Active Acquisition
+    { id: 'vocabulary', label: 'Vocabulary & Lexicon', icon: <SpellCheck size={18} />, sectionLabel: 'Foundations' },
+    { id: 'learn', label: 'Examiner Video Lessons', icon: <Library size={18} /> },
+    { id: 'resources', label: 'Cambridge Official Bank', icon: <GraduationCap size={18} /> },
 
-    // 3. Module Training (Active Drills)
-    { id: 'practice', label: 'Adaptive Practice', icon: <Target size={18} />, requiresAuth: true, sectionLabel: 'Module Training' },
-    { id: 'writing', label: 'Writing Evaluator', icon: <PenTool size={18} />, requiresAuth: true },
-    { id: 'speaking', label: 'Speaking Coach', icon: <Mic size={18} />, requiresAuth: true },
+    // 3. Module Practice & AI Coaching
+    { id: 'diagnostic', label: 'Adaptive Diagnostic Test', icon: <Target size={18} />, sectionLabel: 'Modules & Practice' },
+    { id: 'practice', label: 'Question Bank Practice', icon: <ClipboardCheck size={18} /> },
+    { id: 'writing', label: 'Writing AI Evaluator', icon: <PenTool size={18} /> },
+    { id: 'speaking', label: 'Speaking AI Examiner', icon: <Mic size={18} /> },
 
-    // 4. Assessment & Performance (Validation)
-    { id: 'mock', label: 'Exam Simulation', icon: <ClipboardCheck size={18} />, requiresAuth: true, sectionLabel: 'Assessment' },
-    { id: 'progress', label: 'Analytics & Mastery', icon: <TrendingUp size={18} />, requiresAuth: true },
+    // 4. Timed Full Assessment
+    { id: 'mock', label: 'Timed Full Mock Exam', icon: <GraduationCap size={18} />, sectionLabel: 'Simulation' },
 
-    // 5. Preferences
-    { id: 'settings', label: 'Settings', icon: <Settings size={18} />, sectionLabel: 'Preferences' },
+    // 5. Analytics & Configurations
+    { id: 'progress', label: 'Mastery & Progress', icon: <TrendingUp size={18} />, requiresAuth: true, sectionLabel: 'Analytics & Settings' },
+    { id: 'settings', label: 'Candidate Settings', icon: <Settings size={18} /> },
   ];
 
-  const handleNavClick = (tab: ActiveTab) => {
-    onSelectTab(tab);
+  const handleNavClick = (tabId: ActiveTab) => {
+    const item = navItems.find(i => i.id === tabId);
+    if (item?.requiresAuth && !profile) {
+      openAuth('signin');
+      return;
+    }
+    onSelectTab(tabId);
     setMobileMenuOpen(false);
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-canvas)' }}>
-      {/* Sidebar Desktop (Collapsible) */}
-      <aside style={{
-        width: sidebarCollapsed ? '68px' : '260px',
+    <div style={{
+      display: 'flex',
+      minHeight: '100vh',
+      backgroundColor: 'var(--bg-canvas)',
+    }}>
+      {/* Precision Pedagogical Desktop Sidebar */}
+      <aside className="desktop-sidebar" style={{
+        width: sidebarCollapsed ? '64px' : '260px',
         backgroundColor: 'var(--bg-surface)',
         borderRight: '1px solid var(--border-default)',
         display: 'flex',
@@ -124,19 +139,19 @@ export const AppShell = ({
         top: 0,
         height: '100vh',
         zIndex: 20,
-        transition: 'width 200ms cubic-bezier(0.23, 1, 0.32, 1)',
-      }} className="desktop-sidebar">
-        
-        {/* Brand Header - Morphing toggle when collapsed (Pure CSS - No Stuck Tooltips) */}
+        flexShrink: 0,
+        transition: 'width 200ms var(--ease-out)',
+      }}>
+        {/* Sidebar Header: Brand + Theme Toggle + Collapse Toggle */}
         <div style={{
-          padding: sidebarCollapsed ? 'var(--space-3) 0' : 'var(--space-4) var(--space-4)',
+          padding: sidebarCollapsed ? 'var(--space-3) 0' : 'var(--space-3) var(--space-4)',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: sidebarCollapsed ? 'center' : 'space-between',
         }}>
           {sidebarCollapsed ? (
-            /* Collapsed Rail Mode: Pure CSS toggle with zero chance of stuck tooltips */
+            /* Collapsed Rail Mode: PanelLeft toggle icon matching User's reference */
             <div className="rail-toggle-wrapper">
               <button
                 type="button"
@@ -144,67 +159,61 @@ export const AppShell = ({
                 onClick={() => setSidebarCollapsed(false)}
                 aria-label="Open sidebar"
               >
-                <PanelLeft size={18} className="icon-panel" />
-                <GraduationCap size={18} className="icon-cap" />
+                <PanelLeft size={18} strokeWidth={2} />
               </button>
               <div className="rail-tooltip">Open sidebar</div>
             </div>
           ) : (
-            /* Expanded Mode: Brand on left, collapse button on right */
+            /* Expanded Mode: Clean brand logo on left, close sidebar toggle on right with tooltip going outward */
             <>
               <div
                 onClick={() => handleNavClick('home')}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.65rem',
                   cursor: 'pointer',
                   userSelect: 'none',
                 }}
-                title="Click to redirect to platform home"
+                title="AdeptIELTS — Adaptive Preparation"
               >
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'var(--text-primary)',
-                  color: '#fff',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: 'var(--shadow-xs)',
-                  flexShrink: 0,
-                }}>
-                  <GraduationCap size={18} />
-                </div>
-
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '1rem', letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
-                    Adept<span style={{ color: 'var(--brand-primary)' }}>IELTS</span>
-                  </div>
-                  <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', fontWeight: 500, letterSpacing: '0.02em' }}>
-                    Adaptive Preparation
-                  </div>
-                </div>
+                <AdeptLogo variant="full" height={32} />
               </div>
 
-              <button
-                type="button"
-                onClick={() => setSidebarCollapsed(true)}
-                className="btn btn-ghost btn-sm"
-                style={{ padding: '6px', color: 'var(--text-muted)' }}
-                title="Close sidebar"
-                aria-label="Close sidebar"
-              >
-                <PanelLeftClose size={18} />
-              </button>
+              <div className="rail-toggle-wrapper">
+                <button
+                  type="button"
+                  onClick={() => setSidebarCollapsed(true)}
+                  className="btn btn-ghost btn-sm"
+                  style={{
+                    padding: '6px',
+                    color: 'var(--text-muted)',
+                    borderRadius: 'var(--radius-md)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  aria-label="Close sidebar"
+                >
+                  <PanelLeft size={18} strokeWidth={2} />
+                </button>
+                <div className="rail-tooltip">Close sidebar</div>
+              </div>
             </>
           )}
         </div>
 
         {/* Navigation Items Organized by Logical Pedagogical Flow */}
-        <nav style={{ flex: 1, padding: sidebarCollapsed ? 'var(--space-2) 0' : 'var(--space-3)', overflowY: 'auto' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', alignItems: sidebarCollapsed ? 'center' : 'stretch' }}>
+        <nav style={{
+          flex: 1,
+          padding: sidebarCollapsed ? '4px 0' : 'var(--space-3)',
+          overflowY: sidebarCollapsed ? 'hidden' : 'auto',
+        }}>
+          <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: sidebarCollapsed ? '2px' : '3px',
+            alignItems: sidebarCollapsed ? 'center' : 'stretch',
+          }}>
             {navItems.map((item, index) => {
               const active = currentTab === item.id;
               return (
@@ -213,10 +222,10 @@ export const AppShell = ({
                     sidebarCollapsed ? (
                       index > 0 ? (
                         <div style={{
-                          width: '24px',
+                          width: '20px',
                           height: '1px',
                           backgroundColor: 'var(--border-subtle)',
-                          margin: '0.4rem 0',
+                          margin: '2px 0',
                         }} />
                       ) : null
                     ) : (
@@ -242,18 +251,19 @@ export const AppShell = ({
                       alignItems: 'center',
                       justifyContent: sidebarCollapsed ? 'center' : 'flex-start',
                       gap: '0.65rem',
-                      padding: sidebarCollapsed ? '0.6rem' : '0.48rem 0.75rem',
+                      padding: sidebarCollapsed ? '0' : '0.48rem 0.75rem',
                       borderRadius: 'var(--radius-md)',
-                      backgroundColor: active ? 'rgba(24, 24, 27, 0.06)' : 'transparent',
+                      backgroundColor: active ? 'var(--bg-subtle)' : 'transparent',
                       color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
                       fontWeight: active ? 600 : 500,
                       fontSize: '0.84rem',
                       textAlign: 'left',
-                      border: active ? '1px solid rgba(228, 228, 231, 0.9)' : '1px solid transparent',
+                      border: active ? '1px solid var(--border-default)' : '1px solid transparent',
                       boxShadow: active ? 'var(--shadow-xs)' : 'none',
                       transition: 'all var(--transition-fast)',
                       cursor: 'pointer',
-                      width: sidebarCollapsed ? '42px' : '100%',
+                      width: sidebarCollapsed ? '34px' : '100%',
+                      height: sidebarCollapsed ? '34px' : 'auto',
                     }}
                   >
                     <span style={{
@@ -261,6 +271,8 @@ export const AppShell = ({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
+                      transform: sidebarCollapsed ? 'scale(0.88)' : 'none',
+                      transition: 'transform 120ms var(--ease-out), color 120ms var(--ease-out)',
                     }}>
                       {item.icon}
                     </span>
@@ -272,43 +284,83 @@ export const AppShell = ({
           </div>
         </nav>
 
-        {/* Sidebar Footer: Candidate Status / Sign In */}
+        {/* Candidate Profile / Sign In Section & Theme Switcher */}
         <div style={{
-          padding: sidebarCollapsed ? 'var(--space-3) 0' : 'var(--space-3)',
+          padding: sidebarCollapsed ? '6px 0' : 'var(--space-3)',
           borderTop: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-canvas)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: sidebarCollapsed ? 'center' : 'stretch',
+          gap: '0.35rem',
         }}>
+          {/* Dedicated Theme Switcher Pill (Expanded sidebar - topbar also has quick toggle) */}
+          {!sidebarCollapsed && (
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.4rem 0.65rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--bg-subtle)',
+              border: '1px solid var(--border-subtle)',
+              marginBottom: '0.25rem',
+            }}>
+              <span style={{ fontSize: '0.78rem', fontWeight: 600, color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+                {theme === 'dark' ? <Moon size={14} color="var(--brand-primary)" /> : <Sun size={14} color="#f59e0b" />}
+                <span>{theme === 'dark' ? 'Dark Mode' : 'Light Mode'}</span>
+              </span>
+              <button
+                type="button"
+                onClick={(e) => toggleTheme(e)}
+                className="theme-switch-pill"
+                aria-label="Toggle theme mode"
+                title={`Switch to ${theme === 'dark' ? 'Light' : 'Dark'} mode`}
+                style={{
+                  backgroundColor: theme === 'dark' ? 'var(--brand-primary)' : 'var(--border-strong)',
+                }}
+              >
+                <div style={{
+                  width: '16px',
+                  height: '16px',
+                  borderRadius: '50%',
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                  transform: theme === 'dark' ? 'translateX(18px)' : 'translateX(0px)',
+                  transition: 'transform 260ms cubic-bezier(0.16, 1, 0.3, 1)',
+                }} />
+              </button>
+            </div>
+          )}
+
           {profile ? (
             <>
               <button
+                type="button"
                 onClick={() => setProfileModalOpen(true)}
                 style={{
-                  width: sidebarCollapsed ? '42px' : '100%',
-                  height: sidebarCollapsed ? '42px' : 'auto',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: sidebarCollapsed ? 'center' : 'space-between',
-                  padding: sidebarCollapsed ? '0' : '0.55rem 0.75rem',
+                  padding: sidebarCollapsed ? '0' : '0.45rem 0.65rem',
                   borderRadius: 'var(--radius-md)',
-                  border: '1px solid var(--border-default)',
-                  backgroundColor: 'var(--bg-surface)',
+                  backgroundColor: 'var(--bg-subtle)',
+                  border: '1px solid var(--border-subtle)',
+                  width: sidebarCollapsed ? '34px' : '100%',
+                  height: sidebarCollapsed ? '34px' : 'auto',
                   cursor: 'pointer',
-                  transition: 'all 160ms ease-out',
+                  transition: 'background-color 150ms var(--ease-out), border-color 150ms var(--ease-out)',
                 }}
-                title={`Candidate Profile: ${profile.displayName} (Band ${profile.targetBand.toFixed(1)})`}
+                title={sidebarCollapsed ? profile.displayName : 'Candidate Profile & Settings'}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                  <div className="avatar-badge" style={{ width: '32px', height: '32px', fontSize: '0.78rem' }}>
+                  <div className="avatar-badge" style={{ width: sidebarCollapsed ? '28px' : '32px', height: sidebarCollapsed ? '28px' : '32px', fontSize: sidebarCollapsed ? '0.72rem' : '0.78rem' }}>
                     {profile.avatar || profile.displayName.slice(0, 2).toUpperCase()}
                     <span style={{
                       position: 'absolute',
                       bottom: '-1px',
                       right: '-1px',
-                      width: '8px',
-                      height: '8px',
+                      width: '7px',
+                      height: '7px',
                       borderRadius: '50%',
                       backgroundColor: '#10b981',
                       border: '1.5px solid var(--bg-surface)',
@@ -330,6 +382,7 @@ export const AppShell = ({
 
               {!sidebarCollapsed && (
                 <button
+                  type="button"
                   onClick={() => {
                     if (onSignOut) onSignOut();
                     else handleNavClick('home');
@@ -345,6 +398,7 @@ export const AppShell = ({
             !sidebarCollapsed ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 <button
+                  type="button"
                   onClick={() => openAuth('signup')}
                   className="btn btn-primary btn-sm"
                   style={{ width: '100%', fontSize: '0.8rem' }}
@@ -352,6 +406,7 @@ export const AppShell = ({
                   <UserPlus size={13} /> Sign Up Free
                 </button>
                 <button
+                  type="button"
                   onClick={() => openAuth('signin')}
                   className="btn btn-ghost btn-sm"
                   style={{ width: '100%', fontSize: '0.76rem', color: 'var(--text-muted)' }}
@@ -361,12 +416,13 @@ export const AppShell = ({
               </div>
             ) : (
               <button
+                type="button"
                 onClick={() => openAuth('signin')}
                 className="btn btn-primary btn-sm"
-                style={{ width: '38px', height: '38px', padding: 0 }}
+                style={{ width: '34px', height: '34px', padding: 0, borderRadius: 'var(--radius-md)' }}
                 title="Candidate Sign In"
               >
-                <LogIn size={16} />
+                <LogIn size={15} />
               </button>
             )
           )}
@@ -375,37 +431,55 @@ export const AppShell = ({
 
       {/* Main Layout Area */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Topbar (Mobile Only) */}
+        {/* Topbar (Sticky header for mobile and tablet with brand, active route, and theme toggle) */}
         <header className="app-topbar" style={{
           height: '56px',
-          backgroundColor: 'rgba(255, 255, 255, 0.85)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'var(--bg-surface)',
           borderBottom: '1px solid var(--border-default)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 var(--space-6)',
+          padding: '0 var(--space-4)',
           position: 'sticky',
           top: 0,
           zIndex: 10,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
             <button
+              type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="btn btn-subtle btn-sm mobile-only"
-              style={{ display: 'none', padding: '6px' }}
+              style={{ padding: '6px' }}
               aria-label="Toggle navigation"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
 
+            <div onClick={() => handleNavClick('home')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
+              <AdeptLogo variant="full" height={26} />
+            </div>
 
-            <span style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-              {navItems.find(i => i.id === currentTab)?.label || 'AdeptIELTS'}
+            <span className="desktop-breadcrumb" style={{ fontSize: '0.8rem', color: 'var(--text-subtle)', margin: '0 2px' }}>/</span>
+
+            <span className="desktop-breadcrumb" style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              {navItems.find(i => i.id === currentTab)?.label || 'Overview'}
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            {/* Theme Toggle Button with Motion Feedback */}
+            <button
+              type="button"
+              onClick={(e) => toggleTheme(e)}
+              className="theme-toggle-btn"
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle theme mode"
+            >
+              <span className="theme-toggle-icon">
+                {theme === 'dark' ? <Sun size={15} style={{ color: '#fbbf24' }} /> : <Moon size={15} />}
+              </span>
+            </button>
+
             {profile ? (
               <>
                 {/* Candidate Switcher */}
@@ -434,22 +508,7 @@ export const AppShell = ({
                   fontWeight: 600,
                 }}>
                   <Flame size={13} />
-                  <span>{profile.streak}d Streak</span>
-                </div>
-
-                {/* Target Band Pill */}
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.25rem 0.6rem',
-                  borderRadius: 'var(--radius-full)',
-                  backgroundColor: 'var(--bg-subtle)',
-                  border: '1px solid var(--border-subtle)',
-                  fontSize: '0.75rem',
-                  color: 'var(--text-secondary)',
-                }}>
-                  <span>Target: <strong style={{ color: 'var(--text-primary)' }}>Band {profile.targetBand.toFixed(1)}</strong></span>
+                  <span>{profile.streak}d</span>
                 </div>
               </>
             ) : (
@@ -464,9 +523,9 @@ export const AppShell = ({
                 <button
                   onClick={() => openAuth('signup')}
                   className="btn btn-primary btn-sm"
-                  style={{ fontSize: '0.82rem', fontWeight: 600, padding: '0.35rem 0.9rem' }}
+                  style={{ fontSize: '0.82rem', fontWeight: 600, padding: '0.35rem 0.8rem' }}
                 >
-                  Create Account
+                  Sign Up
                 </button>
               </>
             )}
@@ -486,6 +545,29 @@ export const AppShell = ({
             gap: 'var(--space-2)',
             overflowY: 'auto',
           }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '0.5rem 0.75rem',
+              borderRadius: 'var(--radius-md)',
+              backgroundColor: 'var(--bg-subtle)',
+              marginBottom: '0.5rem',
+            }}>
+              <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                Theme Appearance
+              </span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className="btn btn-secondary btn-sm"
+                style={{ gap: '0.4rem', fontSize: '0.78rem', padding: '0.3rem 0.65rem' }}
+              >
+                {theme === 'dark' ? <Sun size={14} style={{ color: '#fbbf24' }} /> : <Moon size={14} />}
+                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
+            </div>
+
             {navItems.map((item) => (
               <button
                 key={item.id}
@@ -511,11 +593,64 @@ export const AppShell = ({
         )}
 
         {/* Main Content Viewport */}
-        <main style={{ flex: 1, padding: 'var(--space-8) var(--space-6)', overflowY: 'auto' }}>
+        <main className="main-content-viewport" style={{ flex: 1, padding: 'var(--space-8) var(--space-6)', overflowY: 'auto' }}>
           <div className="container">
             {children}
           </div>
         </main>
+
+        {/* Native-Feeling Mobile Bottom Tab Bar (App-Native) */}
+        <nav className="mobile-bottom-nav">
+          <button
+            type="button"
+            className={`mobile-tab-item ${currentTab === 'home' ? 'active' : ''}`}
+            onClick={() => handleNavClick('home')}
+            aria-label="Home"
+          >
+            <Home size={19} />
+            <span>Home</span>
+          </button>
+
+          <button
+            type="button"
+            className={`mobile-tab-item ${currentTab === 'practice' ? 'active' : ''}`}
+            onClick={() => handleNavClick('practice')}
+            aria-label="Practice"
+          >
+            <ClipboardCheck size={19} />
+            <span>Practice</span>
+          </button>
+
+          <button
+            type="button"
+            className={`mobile-tab-item ${currentTab === 'diagnostic' ? 'active' : ''}`}
+            onClick={() => handleNavClick('diagnostic')}
+            aria-label="Diagnostic"
+          >
+            <Target size={19} />
+            <span>Diagnostic</span>
+          </button>
+
+          <button
+            type="button"
+            className={`mobile-tab-item ${currentTab === 'writing' ? 'active' : ''}`}
+            onClick={() => handleNavClick('writing')}
+            aria-label="Writing"
+          >
+            <PenTool size={19} />
+            <span>Writing</span>
+          </button>
+
+          <button
+            type="button"
+            className={`mobile-tab-item ${mobileMenuOpen ? 'active' : ''}`}
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-label="More Curriculum"
+          >
+            <Menu size={19} />
+            <span>More</span>
+          </button>
+        </nav>
       </div>
 
       {/* Authentication Modal */}
@@ -550,6 +685,9 @@ export const AppShell = ({
           .app-topbar {
             display: none !important;
           }
+          .mobile-bottom-nav {
+            display: none !important;
+          }
         }
         @media (max-width: 900px) {
           .desktop-sidebar {
@@ -557,6 +695,11 @@ export const AppShell = ({
           }
           .mobile-only {
             display: flex !important;
+          }
+        }
+        @media (max-width: 640px) {
+          .desktop-breadcrumb {
+            display: none !important;
           }
         }
       `}</style>

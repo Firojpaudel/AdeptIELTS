@@ -244,26 +244,27 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
           {aiCritique ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               {/* Executive Diagnosis & Readiness Card */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'minmax(280px, 340px) 1fr',
-                gap: '1.5rem',
-                backgroundColor: 'var(--bg-subtle)',
-                borderRadius: 'var(--radius-lg)',
-                padding: '1.5rem',
-                border: '1px solid var(--border-subtle)',
-                boxShadow: 'var(--shadow-sm)',
-              }}>
+              <div
+                className="progress-readiness-grid"
+                style={{
+                  backgroundColor: 'var(--bg-subtle)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: '1.5rem',
+                  border: '1px solid var(--border-subtle)',
+                  boxShadow: 'var(--shadow-sm)',
+                }}
+              >
                 {/* Visual Radial Readiness Meter */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between',
-                  gap: '1rem',
-                  paddingRight: '1rem',
-                  borderRight: '1px solid var(--border-subtle)',
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
+                <div
+                  className="readiness-meter-col"
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    gap: '1rem',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem', flexWrap: 'wrap' }}>
                     {/* SVG Circular Readiness Meter */}
                     <div style={{ position: 'relative', width: '92px', height: '92px', flexShrink: 0 }}>
                       <svg width="92" height="92" viewBox="0 0 92 92" style={{ transform: 'rotate(-90deg)' }}>

@@ -152,12 +152,12 @@ export const ResourcesView = () => {
                   fontSize: '0.78rem',
                   fontWeight: bookReaderMode === 'pdf' ? 650 : 500,
                   borderRadius: 'calc(var(--radius-md) - 2px)',
-                  backgroundColor: bookReaderMode === 'pdf' ? '#ffffff' : 'transparent',
+                  backgroundColor: bookReaderMode === 'pdf' ? 'var(--bg-surface)' : 'transparent',
                   color: bookReaderMode === 'pdf' ? 'var(--text-primary)' : 'var(--text-muted)',
-                  boxShadow: bookReaderMode === 'pdf' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  boxShadow: bookReaderMode === 'pdf' ? 'var(--shadow-xs)' : 'none',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'all var(--transition-fast)',
+                  transition: 'background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out)',
                 }}
               >
                 High-Definition PDF
@@ -170,12 +170,12 @@ export const ResourcesView = () => {
                   fontSize: '0.78rem',
                   fontWeight: bookReaderMode === 'embed' ? 650 : 500,
                   borderRadius: 'calc(var(--radius-md) - 2px)',
-                  backgroundColor: bookReaderMode === 'embed' ? '#ffffff' : 'transparent',
+                  backgroundColor: bookReaderMode === 'embed' ? 'var(--bg-surface)' : 'transparent',
                   color: bookReaderMode === 'embed' ? 'var(--text-primary)' : 'var(--text-muted)',
-                  boxShadow: bookReaderMode === 'embed' ? '0 1px 2px rgba(0,0,0,0.06)' : 'none',
+                  boxShadow: bookReaderMode === 'embed' ? 'var(--shadow-xs)' : 'none',
                   cursor: 'pointer',
                   border: 'none',
-                  transition: 'all var(--transition-fast)',
+                  transition: 'background-color 140ms var(--ease-out), color 140ms var(--ease-out), box-shadow 140ms var(--ease-out)',
                 }}
               >
                 Archive Flipbook
@@ -376,7 +376,7 @@ export const ResourcesView = () => {
 
                 {sec.examples && (
                   <div style={{
-                    backgroundColor: '#ffffff',
+                    backgroundColor: 'var(--bg-surface)',
                     border: '1px solid var(--border-default)',
                     borderRadius: 'var(--radius-md)',
                     padding: '1rem 1.25rem',
@@ -422,7 +422,7 @@ export const ResourcesView = () => {
               </div>
 
               <div style={{
-                backgroundColor: '#ffffff',
+                backgroundColor: 'var(--bg-surface)',
                 border: '1px solid var(--border-subtle)',
                 borderRadius: 'var(--radius-md)',
                 padding: '1.25rem',

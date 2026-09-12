@@ -148,7 +148,7 @@ export const StudyCalendarModal = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1.25rem',
+        padding: 'clamp(0.5rem, 2vw, 1.25rem)',
       }}
       onClick={onClose}
     >
@@ -171,8 +171,8 @@ export const StudyCalendarModal = ({
           className="btn btn-ghost btn-sm"
           style={{
             position: 'absolute',
-            top: '1.1rem',
-            right: '1.25rem',
+            top: '0.85rem',
+            right: '0.85rem',
             zIndex: 40,
             padding: '6px',
             borderRadius: 'var(--radius-sm)',
@@ -190,7 +190,7 @@ export const StudyCalendarModal = ({
         <div
           className="double-bezel-inner"
           style={{
-            padding: '1.5rem 1.75rem',
+            padding: 'clamp(1rem, 3.5vw, 1.75rem)',
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
@@ -210,7 +210,7 @@ export const StudyCalendarModal = ({
           {/* Top Streak & Consistency Dashboard */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(4, 1fr)',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
             gap: '0.75rem',
             flexShrink: 0,
             alignItems: 'stretch',
@@ -400,14 +400,14 @@ export const StudyCalendarModal = ({
                       borderRight: (idx + 1) % 7 !== 0 ? '1px solid var(--border-subtle)' : 'none',
                       borderBottom: idx < calendarCells.length - 7 ? '1px solid var(--border-subtle)' : 'none',
                       backgroundColor: isSelected
-                        ? 'var(--brand-subtle)'
+                        ? 'var(--brand-primary-subtle)'
                         : cell.hasStudied
-                        ? '#fffbeb'
+                        ? 'var(--warning-subtle)'
                         : cell.isCurrentMonth
-                        ? '#ffffff'
+                        ? 'var(--bg-surface)'
                         : 'var(--bg-subtle)',
                       cursor: 'pointer',
-                      transition: 'background-color 150ms ease, box-shadow 150ms ease',
+                      transition: 'background-color 150ms ease, box-shadow 150ms ease, filter 150ms ease',
                       position: 'relative',
                       display: 'flex',
                       flexDirection: 'column',

@@ -91,7 +91,7 @@ export const App: React.FC = () => {
     return existing;
   });
 
-  const [currentTab, setCurrentTab] = useState<ActiveTab>('home');
+  const [currentTab, setCurrentTab] = useState<ActiveTab>(() => (loadLearnerProfile() ? 'dashboard' : 'home'));
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'signin' | 'signup'>('signup');
 
@@ -127,6 +127,10 @@ export const App: React.FC = () => {
     } else {
       setVocabCards(cards);
     }
+  };
+
+  const handleProfileCreatedOrSignedIn = (newProfile: LearnerProfile) => {
+    handleProfileChanged(newProfile);
     setCurrentTab('dashboard');
   };
 
@@ -154,6 +158,7 @@ export const App: React.FC = () => {
       >
         {currentTab === 'home' && (
           <HomeView
+            profile={profile}
             onStartSignUp={() => handleOpenAuth('signup')}
             onOpenSignIn={() => handleOpenAuth('signin')}
             onNavigateTab={setCurrentTab}
@@ -167,6 +172,7 @@ export const App: React.FC = () => {
               attempts={attempts}
               vocabCards={vocabCards}
               onNavigate={setCurrentTab}
+              onProfileUpdated={handleProfileChanged}
             />
           ) : (
             <CandidateAuthGate
@@ -226,6 +232,9 @@ export const App: React.FC = () => {
 
         {currentTab === 'mock' && (
           <MockExamView
+            profile={profile}
+            attempts={attempts}
+            onAttemptRecorded={handleAttemptRecorded}
             onExitMock={() => setCurrentTab('dashboard')}
           />
         )}
@@ -287,7 +296,7 @@ export const App: React.FC = () => {
         activeProfile={profile}
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
-        onProfileChanged={handleProfileChanged}
+        onProfileChanged={handleProfileCreatedOrSignedIn}
         initialMode={authModalMode}
       />
     </>
