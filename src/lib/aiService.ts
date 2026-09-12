@@ -55,6 +55,62 @@ export function getDefaultModelForProvider(provider: AISettings['provider']): st
   }
 }
 
+// -------------------------------------------------------------
+// Server-Side Speech-to-Text (Groq Whisper Fallback for Mobile)
+// -------------------------------------------------------------
+
+/**
+ * Transcribes an audio blob using Groq's Whisper API.
+ * This is the mobile fallback when the browser's Web Speech API
+ * silently fails (common on Android Chrome, Firefox, Samsung Internet, iOS Safari).
+ *
+ * Endpoint: POST https://api.groq.com/openai/v1/audio/transcriptions
+ * Model: whisper-large-v3-turbo (free tier, ultra-fast, multilingual)
+ */
+export async function transcribeAudioWithWhisper(
+  audioBlob: Blob,
+  apiKey: string,
+): Promise<{ text: string; fallbackUsed: boolean }> {
+  if (!apiKey) {
+    return { text: '', fallbackUsed: false };
+  }
+
+  try {
+    const formData = new FormData();
+    // Ensure the blob has a recognizable filename extension for the API
+    const ext = audioBlob.type.includes('mp4') ? 'mp4'
+      : audioBlob.type.includes('ogg') ? 'ogg'
+      : audioBlob.type.includes('aac') ? 'aac'
+      : 'webm';
+    formData.append('file', audioBlob, `recording.${ext}`);
+    formData.append('model', 'whisper-large-v3-turbo');
+    formData.append('language', 'en');
+    formData.append('response_format', 'json');
+
+    const res = await fetch('https://api.groq.com/openai/v1/audio/transcriptions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: formData,
+    });
+
+    if (!res.ok) {
+      const errBody = await res.text().catch(() => '');
+      console.warn(`Whisper STT HTTP ${res.status}:`, errBody);
+      return { text: '', fallbackUsed: true };
+    }
+
+    const data = await res.json();
+    const transcript = (data.text || '').trim();
+    return { text: transcript, fallbackUsed: true };
+  } catch (err) {
+    console.warn('Whisper STT fallback error:', err);
+  }
+
+  return { text: '', fallbackUsed: false };
+}
+
 /**
  * Dynamically queries the provider's /models endpoint to discover live available models for an API key.
  */

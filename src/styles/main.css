@@ -852,6 +852,32 @@ html.theme-transitioning *::after {
   .main-content-viewport {
     padding: 1rem 0.75rem calc(76px + env(safe-area-inset-bottom, 0px)) 0.75rem !important;
   }
+  .mobile-tab-item {
+    font-size: 0.64rem !important;
+    max-width: 68px !important;
+  }
+}
+
+/* Responsive Mobile Logo Variants:
+   - Below 480px: show icon-only, hide full wordmark
+   - Above 480px: show full wordmark, hide icon-only */
+.mobile-logo-icon {
+  display: none;
+}
+.mobile-logo-full {
+  display: inline-flex;
+}
+
+@media (max-width: 480px) {
+  .mobile-logo-icon {
+    display: inline-flex;
+  }
+  .mobile-logo-full {
+    display: none;
+  }
+  .main-content-viewport {
+    padding: 0.75rem 0.5rem calc(72px + env(safe-area-inset-bottom, 0px)) 0.5rem !important;
+  }
 }
 
 /* Rail Collapse Toggle & Foolproof CSS Tooltip */

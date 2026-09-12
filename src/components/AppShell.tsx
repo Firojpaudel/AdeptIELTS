@@ -433,30 +433,32 @@ export const AppShell = ({
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         {/* Topbar (Sticky header for mobile and tablet with brand, active route, and theme toggle) */}
         <header className="app-topbar" style={{
-          height: '56px',
+          height: '48px',
           backgroundColor: 'var(--bg-surface)',
           borderBottom: '1px solid var(--border-default)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          padding: '0 var(--space-4)',
+          padding: '0 0.75rem',
           position: 'sticky',
           top: 0,
           zIndex: 10,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0 }}>
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="btn btn-subtle btn-sm mobile-only"
-              style={{ padding: '6px' }}
+              style={{ padding: '5px', flexShrink: 0 }}
               aria-label="Toggle navigation"
             >
               {mobileMenuOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
 
-            <div onClick={() => handleNavClick('home')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center' }}>
-              <AdeptLogo variant="full" height={26} />
+            <div onClick={() => handleNavClick('home')} style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              {/* Icon-only logo on narrow phones, full logo on wider screens */}
+              <span className="mobile-logo-icon"><AdeptLogo variant="icon" height={24} /></span>
+              <span className="mobile-logo-full"><AdeptLogo variant="full" height={22} /></span>
             </div>
 
             <span className="desktop-breadcrumb" style={{ fontSize: '0.8rem', color: 'var(--text-subtle)', margin: '0 2px' }}>/</span>
@@ -466,8 +468,8 @@ export const AppShell = ({
             </span>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            {/* Theme Toggle Button with Motion Feedback */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexShrink: 0 }}>
+            {/* Theme Toggle Button */}
             <button
               type="button"
               onClick={(e) => toggleTheme(e)}
@@ -476,39 +478,62 @@ export const AppShell = ({
               aria-label="Toggle theme mode"
             >
               <span className="theme-toggle-icon">
-                {theme === 'dark' ? <Sun size={15} style={{ color: '#fbbf24' }} /> : <Moon size={15} />}
+                {theme === 'dark' ? <Sun size={14} style={{ color: '#fbbf24' }} /> : <Moon size={14} />}
               </span>
             </button>
 
             {profile ? (
               <>
-                {/* Candidate Switcher */}
+                {/* Compact Initials Avatar Button */}
                 <button
                   onClick={() => setProfileModalOpen(true)}
-                  className="btn btn-secondary btn-sm"
-                  style={{ gap: '0.4rem', padding: '0.3rem 0.65rem' }}
-                  title="Candidate Profile & Account"
+                  style={{
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--brand-primary)',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    border: '2px solid var(--brand-primary-border)',
+                    cursor: 'pointer',
+                    flexShrink: 0,
+                    letterSpacing: '0.02em',
+                    position: 'relative',
+                  }}
+                  title={`${profile.displayName} — Candidate Profile`}
                 >
-                  <UserCheck size={14} color="var(--brand-primary)" />
-                  <span style={{ fontWeight: 600 }}>{profile.displayName}</span>
-                  <ChevronDown size={12} color="var(--text-muted)" />
+                  {profile.avatar || profile.displayName.split(/\s+/).map(w => w[0]).join('').toUpperCase().slice(0, 2)}
+                  <span style={{
+                    position: 'absolute',
+                    bottom: '-1px',
+                    right: '-1px',
+                    width: '7px',
+                    height: '7px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981',
+                    border: '1.5px solid var(--bg-surface)',
+                  }} />
                 </button>
 
-                {/* Streak Counter */}
+                {/* Compact Streak Counter */}
                 <div style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '0.35rem',
-                  padding: '0.25rem 0.6rem',
+                  gap: '0.2rem',
+                  padding: '0.15rem 0.4rem',
                   borderRadius: 'var(--radius-full)',
                   backgroundColor: 'var(--warning-subtle)',
                   border: '1px solid var(--warning-border)',
                   color: 'var(--warning)',
-                  fontSize: '0.75rem',
-                  fontWeight: 600,
+                  fontSize: '0.7rem',
+                  fontWeight: 700,
                 }}>
-                  <Flame size={13} />
-                  <span>{profile.streak}d</span>
+                  <Flame size={11} />
+                  <span>{profile.streak}</span>
                 </div>
               </>
             ) : (
@@ -516,14 +541,14 @@ export const AppShell = ({
                 <button
                   onClick={() => openAuth('signin')}
                   className="btn btn-ghost btn-sm"
-                  style={{ fontSize: '0.82rem', fontWeight: 600 }}
+                  style={{ fontSize: '0.78rem', fontWeight: 600, padding: '0.25rem 0.5rem' }}
                 >
                   Sign In
                 </button>
                 <button
                   onClick={() => openAuth('signup')}
                   className="btn btn-primary btn-sm"
-                  style={{ fontSize: '0.82rem', fontWeight: 600, padding: '0.35rem 0.8rem' }}
+                  style={{ fontSize: '0.78rem', fontWeight: 600, padding: '0.25rem 0.6rem' }}
                 >
                   Sign Up
                 </button>
@@ -536,7 +561,7 @@ export const AppShell = ({
         {mobileMenuOpen && (
           <div style={{
             position: 'fixed',
-            inset: '56px 0 0 0',
+            inset: '48px 0 0 0',
             backgroundColor: 'var(--bg-surface)',
             zIndex: 100,
             padding: 'var(--space-4)',

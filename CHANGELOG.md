@@ -14,6 +14,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - On-demand "Fetch Live Models" manual discovery button for immediate provider refresh.
 - Automated multi-model fallback cascade during execution to handle decommissioned or enterprise-gated checkpoints without breaking active candidate test sessions.
 - Timed Exam Simulation configuration card in MockExamView with modular section selector cards and exam conduct notices.
+- Groq Whisper STT fallback engine (`whisper-large-v3-turbo`) providing seamless voice transcription on mobile browsers (Android Chrome, Firefox, iOS Safari) when Web Speech API is unavailable or returns empty transcripts.
+- Mobile navbar declutter: replaced overflowing name button with initials avatar circle, tightened streak indicator, reduced mobile header height to 48px, and added responsive icon-only logo on screens < 480px.
+- Enhanced mobile viewport responsiveness with comfortable safe-area padding and compact touch targets.
 
 ### Changed
 - Migrated Groq Cloud default model to `openai/gpt-oss-120b` and updated production presets to `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, and `qwen/qwen3.8-27b`.

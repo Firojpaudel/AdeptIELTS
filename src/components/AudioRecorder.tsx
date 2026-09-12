@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
-import { Mic, Square, Play, Pause, RotateCcw, Volume2, AlertCircle } from 'lucide-react';
+import { Mic, Square, Play, Pause, RotateCcw, Volume2, AlertCircle, Loader2 } from 'lucide-react';
+import { transcribeAudioWithWhisper } from '../lib/aiService';
 
 interface AudioRecorderProps {
   maxDurationSeconds?: number;
   onRecordingComplete: (audioBlob: Blob, transcript: string, durationSeconds: number) => void;
   onLiveTranscript?: (liveText: string) => void;
   onRecordingStatusChange?: (recording: boolean) => void;
+  /** Groq API key for Whisper STT fallback on mobile browsers */
+  apiKey?: string;
 }
 
 export const AudioRecorder = ({
@@ -13,6 +16,7 @@ export const AudioRecorder = ({
   onRecordingComplete,
   onLiveTranscript,
   onRecordingStatusChange,
+  apiKey,
 }: AudioRecorderProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [duration, setDuration] = useState(0);
@@ -20,6 +24,7 @@ export const AudioRecorder = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [liveTranscript, setLiveTranscript] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioChunksRef = useRef<Blob[]>([]);
@@ -132,7 +137,7 @@ export const AudioRecorder = ({
         }
       };
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blobType = mimeTypeRef.current || (audioChunksRef.current[0]?.type) || 'audio/webm';
         const audioBlob = new Blob(audioChunksRef.current, { type: blobType });
         const url = URL.createObjectURL(audioBlob);
@@ -141,7 +146,27 @@ export const AudioRecorder = ({
         // Clean up microphone stream tracks
         stream.getTracks().forEach(track => track.stop());
 
-        onRecordingComplete(audioBlob, liveTranscriptRef.current, durationRef.current);
+        // Whisper STT Fallback: if Web Speech API produced no transcript (common on mobile),
+        // send the recorded audio to Groq Whisper for server-side transcription.
+        let finalTranscript = liveTranscriptRef.current;
+        if ((!finalTranscript || finalTranscript.length < 3) && apiKey && audioBlob.size > 1000) {
+          setIsTranscribing(true);
+          try {
+            const whisperResult = await transcribeAudioWithWhisper(audioBlob, apiKey);
+            if (whisperResult.text && whisperResult.text.length > 0) {
+              finalTranscript = whisperResult.text;
+              setLiveTranscript(finalTranscript);
+              liveTranscriptRef.current = finalTranscript;
+              if (onLiveTranscript) onLiveTranscript(finalTranscript);
+            }
+          } catch (err) {
+            console.warn('Whisper fallback failed:', err);
+          } finally {
+            setIsTranscribing(false);
+          }
+        }
+
+        onRecordingComplete(audioBlob, finalTranscript, durationRef.current);
       };
 
       mediaRecorder.start(250);
@@ -326,11 +351,20 @@ export const AudioRecorder = ({
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
             <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-              {isRecording ? 'Speaking in progress...' : audioUrl ? 'Response captured' : 'Microphone standby'}
+              {isTranscribing ? 'Transcribing with AI...' : isRecording ? 'Speaking in progress...' : audioUrl ? 'Response captured' : 'Microphone standby'}
             </span>
-            {speechSupported ? (
+            {isTranscribing ? (
+              <span className="badge badge-brand" style={{ fontSize: '0.68rem', padding: '2px 6px', display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Loader2 size={10} className="spin" />
+                Whisper STT
+              </span>
+            ) : speechSupported ? (
               <span className="badge badge-brand" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
                 STT Live
+              </span>
+            ) : apiKey ? (
+              <span className="badge badge-brand" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>
+                Whisper Fallback
               </span>
             ) : (
               <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '2px 6px' }}>

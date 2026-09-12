@@ -22,7 +22,7 @@ import {
 import { IELTS_SPEAKING_PROMPTS } from '../../data/ieltsDataset';
 import { SpeakingSession, SpeakingFeedback, SpeakingPrompt } from '../../lib/types';
 import { evaluateSpeakingTranscript } from '../../lib/aiService';
-import { saveSpeakingSession } from '../../lib/storage';
+import { saveSpeakingSession, loadAISettings } from '../../lib/storage';
 import { logStudyEvent } from '../../lib/studyTracker';
 import { AudioRecorder } from '../../components/AudioRecorder';
 
@@ -523,6 +523,7 @@ export const SpeakingCoachView = () => {
             setTranscriptText(text);
           }}
           onRecordingStatusChange={setIsMicRecording}
+          apiKey={loadAISettings().apiKey}
         />
       </div>
 
