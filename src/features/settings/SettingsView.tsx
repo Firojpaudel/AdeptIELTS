@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Save,
   Trash2,
@@ -13,16 +13,17 @@ import {
   Clock,
   Calendar,
   Award,
-  Sparkles,
   KeyRound,
   Check,
   RotateCcw,
   Lock,
   Cloud,
+  Cpu,
+  RefreshCw,
 } from 'lucide-react';
 import { LearnerProfile, AISettings } from '../../lib/types';
 import { saveLearnerProfile, saveAISettings, saveAISettingsAsync, loadAISettings, resetAllData } from '../../lib/storage';
-import { testAIConnection, getDefaultModelForProvider } from '../../lib/aiService';
+import { testAIConnection, getDefaultModelForProvider, fetchLiveProviderModels, getOrSyncLiveModels } from '../../lib/aiService';
 
 interface SettingsViewProps {
   profile: LearnerProfile;
@@ -47,6 +48,59 @@ export const SettingsView = ({
     loading: boolean;
     result: { success: boolean; model: string; message: string } | null;
   }>({ loading: false, result: null });
+
+  // Live Model Discovery State
+  const [isFetchingLiveModels, setIsFetchingLiveModels] = useState(false);
+  const [liveDiscoveredModels, setLiveDiscoveredModels] = useState<Record<string, string[]>>({});
+  const [fetchModelMsg, setFetchModelMsg] = useState<{ text: string; isError?: boolean } | null>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+
+  // Automated Daily Model Synchronization Hook:
+  // Runs seamlessly in the background to detect newly supported LLM models from the provider API.
+  useEffect(() => {
+    let isMounted = true;
+    const runAutoSync = async () => {
+      if (!aiSettings.apiKey || aiSettings.provider === 'offline_deterministic') return;
+      try {
+        const res = await getOrSyncLiveModels(aiSettings.provider, aiSettings.apiKey, false);
+        if (isMounted && res.models && res.models.length > 0) {
+          setLiveDiscoveredModels(prev => ({ ...prev, [aiSettings.provider]: res.models }));
+          setLastSyncTime(res.syncedAt);
+        }
+      } catch {
+        // Transparent fallback to static defaults if offline
+      }
+    };
+    runAutoSync();
+    return () => {
+      isMounted = false;
+    };
+  }, [aiSettings.provider, aiSettings.apiKey]);
+
+  const handleFetchLiveModels = async () => {
+    if (!aiSettings.apiKey && aiSettings.provider !== 'offline_deterministic') {
+      setFetchModelMsg({ text: 'Please paste your API key above first to query live models.', isError: true });
+      setTimeout(() => setFetchModelMsg(null), 5000);
+      return;
+    }
+    setIsFetchingLiveModels(true);
+    setFetchModelMsg(null);
+    try {
+      const res = await getOrSyncLiveModels(aiSettings.provider, aiSettings.apiKey, true);
+      if (res.models && res.models.length > 0) {
+        setLiveDiscoveredModels(prev => ({ ...prev, [aiSettings.provider]: res.models }));
+        setLastSyncTime(res.syncedAt);
+        setFetchModelMsg({ text: `Discovered ${res.models.length} live models directly from ${aiSettings.provider.toUpperCase()} API endpoint!` });
+      } else {
+        setFetchModelMsg({ text: `No chat models returned from ${aiSettings.provider.toUpperCase()} models endpoint.`, isError: true });
+      }
+    } catch (err: any) {
+      setFetchModelMsg({ text: `Models endpoint error: ${err.message || err}`, isError: true });
+    } finally {
+      setIsFetchingLiveModels(false);
+      setTimeout(() => setFetchModelMsg(null), 7000);
+    }
+  };
 
   const handleTestConnection = async () => {
     if (!aiSettings.apiKey && aiSettings.provider !== 'offline_deterministic' && !aiSettings.workerUrl) {
@@ -126,12 +180,12 @@ export const SettingsView = ({
     {
       id: 'groq',
       name: 'Groq Cloud',
-      tier: '100% Free Tier',
-      model: 'Llama 3.3 70B Versatile',
-      speed: '~350 tok/sec • Ultra-Low Latency',
+      tier: 'Ultra-Fast Inference',
+      model: 'OpenAI GPT OSS 120B / 20B & Qwen 3.8',
+      speed: '~500 tok/sec • Ultra-Low Latency',
       url: 'https://console.groq.com/keys',
       badge: 'Ultra-Fast',
-      presets: ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant', 'mixtral-8x7b-32768'],
+      presets: ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'qwen/qwen3.6-27b', 'groq/compound'],
     },
     {
       id: 'anthropic',
@@ -602,48 +656,113 @@ export const SettingsView = ({
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
                   <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Sparkles size={13} color="var(--brand-primary)" />
+                    <Cpu size={13} color="var(--brand-primary)" />
                     <span>Model Engine / Checkpoint:</span>
                   </label>
-                  <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                    Active: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)}</strong>
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                    <button
+                      type="button"
+                      onClick={handleFetchLiveModels}
+                      disabled={isFetchingLiveModels || !aiSettings.apiKey}
+                      className="btn btn-ghost btn-sm"
+                      style={{
+                        fontSize: '0.72rem',
+                        padding: '0.2rem 0.55rem',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        color: 'var(--brand-primary)',
+                        border: '1px solid var(--brand-primary-border)',
+                        backgroundColor: 'var(--brand-primary-subtle)',
+                        borderRadius: 'var(--radius-sm)',
+                        cursor: !aiSettings.apiKey ? 'not-allowed' : 'pointer',
+                      }}
+                      title="Query live /v1/models endpoint to fetch all active models for your API key"
+                    >
+                      <RefreshCw size={11} className={isFetchingLiveModels ? 'spin' : ''} />
+                      <span>{isFetchingLiveModels ? 'Querying API...' : 'Fetch Live Models'}</span>
+                    </button>
+                    {lastSyncTime && (
+                      <span style={{
+                        fontSize: '0.7rem',
+                        color: 'var(--brand-primary)',
+                        backgroundColor: 'var(--brand-surface)',
+                        padding: '0.15rem 0.5rem',
+                        borderRadius: 'var(--radius-full)',
+                        fontWeight: 600,
+                        border: '1px solid var(--brand-primary-border)',
+                      }}>
+                        Auto-synced today
+                      </span>
+                    )}
+                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                      Active: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)}</strong>
+                    </span>
+                  </div>
                 </div>
+
+                {fetchModelMsg && (
+                  <div style={{
+                    fontSize: '0.76rem',
+                    padding: '0.35rem 0.65rem',
+                    borderRadius: 'var(--radius-sm)',
+                    backgroundColor: fetchModelMsg.isError ? 'var(--error-subtle)' : 'var(--success-subtle)',
+                    color: fetchModelMsg.isError ? 'var(--error-text)' : 'var(--success-text)',
+                    border: `1px solid ${fetchModelMsg.isError ? 'var(--error-border)' : 'var(--success-border)'}`,
+                  }}>
+                    {fetchModelMsg.text}
+                  </div>
+                )}
 
                 {/* Preset Pills */}
                 {(() => {
                   const activeProv = aiProviders.find(p => p.id === aiSettings.provider);
-                  const presets = activeProv?.presets || [];
+                  const isLive = !!liveDiscoveredModels[aiSettings.provider]?.length;
+                  const presets = liveDiscoveredModels[aiSettings.provider] || activeProv?.presets || [];
                   if (presets.length === 0) return null;
                   return (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
-                      {presets.map(modelName => {
-                        const isChosen = (aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)) === modelName;
-                        return (
-                          <button
-                            key={modelName}
-                            type="button"
-                            onClick={() => {
-                              setAiSettings({ ...aiSettings, modelOverride: modelName });
-                              setTestState({ loading: false, result: null });
-                            }}
-                            className="btn btn-sm"
-                            style={{
-                              padding: '0.25rem 0.65rem',
-                              fontSize: '0.78rem',
-                              fontFamily: 'var(--font-mono)',
-                              fontWeight: isChosen ? 700 : 500,
-                              backgroundColor: isChosen ? 'var(--brand-primary)' : 'var(--bg-subtle)',
-                              color: isChosen ? '#ffffff' : 'var(--text-secondary)',
-                              border: `1px solid ${isChosen ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
-                              borderRadius: 'var(--radius-sm)',
-                              transition: 'all 140ms ease',
-                            }}
-                          >
-                            {modelName}
-                          </button>
-                        );
-                      })}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                      {isLive && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                          <div style={{ fontSize: '0.68rem', fontWeight: 650, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            Live Models Discovered from {aiSettings.provider.toUpperCase()} API ({presets.length}):
+                          </div>
+                          {lastSyncTime && (
+                            <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
+                              Auto-synced: {new Date(lastSyncTime).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                        {presets.map(modelName => {
+                          const isChosen = (aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)) === modelName;
+                          return (
+                            <button
+                              key={modelName}
+                              type="button"
+                              onClick={() => {
+                                setAiSettings({ ...aiSettings, modelOverride: modelName });
+                                setTestState({ loading: false, result: null });
+                              }}
+                              className="btn btn-sm"
+                              style={{
+                                padding: '0.25rem 0.65rem',
+                                fontSize: '0.78rem',
+                                fontFamily: 'var(--font-mono)',
+                                fontWeight: isChosen ? 700 : 500,
+                                backgroundColor: isChosen ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                                color: isChosen ? '#ffffff' : 'var(--text-secondary)',
+                                border: `1px solid ${isChosen ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
+                                borderRadius: 'var(--radius-sm)',
+                                transition: 'all 140ms ease',
+                              }}
+                            >
+                              {modelName}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
                   );
                 })()}

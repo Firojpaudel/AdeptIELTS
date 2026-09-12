@@ -41,7 +41,7 @@ export function getDefaultModelForProvider(provider: AISettings['provider']): st
     case 'gemini':
       return 'gemini-2.5-flash';
     case 'groq':
-      return 'llama-3.3-70b-versatile';
+      return 'openai/gpt-oss-120b';
     case 'anthropic':
       return 'claude-3-7-sonnet-20250219';
     case 'openai':
@@ -53,6 +53,131 @@ export function getDefaultModelForProvider(provider: AISettings['provider']): st
     default:
       return 'local-heuristic';
   }
+}
+
+/**
+ * Dynamically queries the provider's /models endpoint to discover live available models for an API key.
+ */
+export async function fetchLiveProviderModels(provider: AISettings['provider'], apiKey: string): Promise<string[]> {
+  if (!apiKey) return [];
+  try {
+    if (provider === 'groq') {
+      const res = await fetch('https://api.groq.com/openai/v1/models', {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error?.message || `Groq API HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      if (Array.isArray(data.data)) {
+        return data.data
+          .map((m: any) => m.id)
+          .filter((id: string) =>
+            !id.includes('whisper') &&
+            !id.includes('guard') &&
+            !id.includes('orpheus') &&
+            !id.includes('embed')
+          );
+      }
+    }
+    if (provider === 'openai') {
+      const res = await fetch('https://api.openai.com/v1/models', {
+        headers: { 'Authorization': `Bearer ${apiKey}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data.data)) {
+        return data.data
+          .map((m: any) => m.id)
+          .filter((id: string) => id.startsWith('gpt-') || id.startsWith('o1') || id.startsWith('o3'))
+          .slice(0, 10);
+      }
+    }
+    if (provider === 'openrouter') {
+      const res = await fetch('https://openrouter.ai/api/v1/models');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data.data)) {
+        return data.data.map((m: any) => m.id).slice(0, 12);
+      }
+    }
+    if (provider === 'gemini') {
+      const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (Array.isArray(data.models)) {
+        return data.models
+          .map((m: any) => m.name.replace(/^models\//, ''))
+          .filter((id: string) => id.includes('gemini'));
+      }
+    }
+  } catch (err) {
+    console.warn(`Could not fetch live models for ${provider}:`, err);
+    throw err;
+  }
+  return [];
+}
+
+const LIVE_MODEL_CACHE_PREFIX = 'adept_live_models_';
+const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24 hours daily sync
+
+export interface LiveModelCache {
+  provider: string;
+  models: string[];
+  syncedAt: number;
+}
+
+export function getCachedLiveModels(provider: AISettings['provider']): LiveModelCache | null {
+  try {
+    const raw = localStorage.getItem(`${LIVE_MODEL_CACHE_PREFIX}${provider}`);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Daily Automated Model Sync Engine:
+ * Dynamically queries the provider's /models endpoint once every 24 hours,
+ * caching results locally so the UI always has the newest models without manual intervention.
+ */
+export async function getOrSyncLiveModels(
+  provider: AISettings['provider'],
+  apiKey: string,
+  forceRefresh = false
+): Promise<{ models: string[]; fromCache: boolean; syncedAt: number }> {
+  const cached = getCachedLiveModels(provider);
+  const isFresh = cached && (Date.now() - cached.syncedAt < SYNC_INTERVAL_MS);
+
+  if (!forceRefresh && isFresh && cached.models.length > 0) {
+    return { models: cached.models, fromCache: true, syncedAt: cached.syncedAt };
+  }
+
+  if (!apiKey) {
+    return { models: cached?.models || [], fromCache: true, syncedAt: cached?.syncedAt || 0 };
+  }
+
+  try {
+    const freshModels = await fetchLiveProviderModels(provider, apiKey);
+    if (freshModels.length > 0) {
+      const cacheObj: LiveModelCache = {
+        provider,
+        models: freshModels,
+        syncedAt: Date.now(),
+      };
+      localStorage.setItem(`${LIVE_MODEL_CACHE_PREFIX}${provider}`, JSON.stringify(cacheObj));
+      return { models: freshModels, fromCache: false, syncedAt: cacheObj.syncedAt };
+    }
+  } catch (err) {
+    console.warn(`Background sync failed for ${provider}, using cached fallback`, err);
+  }
+
+  return { models: cached?.models || [], fromCache: true, syncedAt: cached?.syncedAt || 0 };
 }
 
 export interface LLMRequestOptions {
@@ -280,34 +405,54 @@ export async function executeLLMRequest(
     return data.choices?.[0]?.message?.content || '';
   }
 
-  // 5. Groq Cloud (Default fast free tier)
+  // 5. Groq Cloud (Modern active models with fallback cascade)
   if (provider === 'groq') {
-    const model = modelOverride || 'llama-3.3-70b-versatile';
-    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: 'system', content: options.systemPrompt },
-          { role: 'user', content: options.userPrompt },
-        ],
-        temperature: temp,
-        ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
-        ...(options.jsonMode ? { response_format: { type: 'json_object' } } : {}),
-      }),
-    });
+    const modelsToTry = modelOverride
+      ? [modelOverride, 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'groq/compound']
+      : ['openai/gpt-oss-120b', 'openai/gpt-oss-20b', 'qwen/qwen3.8-27b', 'groq/compound'];
 
-    if (!res.ok) {
-      const errData = await res.json().catch(() => ({}));
-      throw new Error(errData.error?.message || `Groq API HTTP ${res.status}`);
+    let lastError: any = null;
+    for (const model of modelsToTry) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: options.systemPrompt },
+              { role: 'user', content: options.userPrompt },
+            ],
+            temperature: temp,
+            ...(options.maxTokens ? { max_tokens: options.maxTokens } : {}),
+            ...(options.jsonMode ? { response_format: { type: 'json_object' } } : {}),
+          }),
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          const errMsg = errData.error?.message || `Groq API HTTP ${res.status}`;
+          // If model was decommissioned or does not exist / no access, continue to fallback model
+          if (res.status === 404 || res.status === 400 || errMsg.includes('decommissioned') || errMsg.includes('does not exist')) {
+            console.warn(`Groq model '${model}' unavailable (${errMsg}), cascading to next candidate...`);
+            lastError = new Error(`Model '${model}': ${errMsg}`);
+            continue;
+          }
+          throw new Error(errMsg);
+        }
+
+        const data = await res.json();
+        const content = data.choices?.[0]?.message?.content;
+        if (content) return content;
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`Groq (${model}) attempt note:`, err.message || err);
+      }
     }
-
-    const data = await res.json();
-    return data.choices?.[0]?.message?.content || '';
+    throw lastError || new Error('Groq API request failed across all model candidates.');
   }
 
   throw new Error(`Unsupported AI provider: ${provider}`);
@@ -330,7 +475,7 @@ export async function testAIConnection(settings: AISettings): Promise<{ success:
       return {
         success: true,
         model,
-        message: `Connection successful! ${settings.provider.toUpperCase()} (${model}) is responsive.`,
+        message: `Connection successful! ${settings.provider.toUpperCase()} (${model}) is active and responding.`,
       };
     }
     return {
@@ -340,10 +485,14 @@ export async function testAIConnection(settings: AISettings): Promise<{ success:
     };
   } catch (err: any) {
     const model = settings.modelOverride || getDefaultModelForProvider(settings.provider);
+    let msg = err.message || 'Connection test failed. Please verify your API key.';
+    if (settings.provider === 'groq' && (msg.includes('decommissioned') || msg.includes('does not exist'))) {
+      msg = `${msg} Tip: Select active models like 'openai/gpt-oss-120b', 'openai/gpt-oss-20b', or click 'Fetch Live Models'.`;
+    }
     return {
       success: false,
       model,
-      message: err.message || 'Connection test failed. Please verify your API key.',
+      message: msg,
     };
   }
 }

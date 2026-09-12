@@ -2,7 +2,6 @@ import {
   ArrowRight,
   Clock,
   Zap,
-  Sparkles,
   BookOpen,
   PenTool,
   Mic,
@@ -172,16 +171,8 @@ export const DashboardView = ({
                 }}
               >
                 <span>Launch Adaptive Drill</span>
-                <span style={{
-                  width: '26px',
-                  height: '26px',
-                  borderRadius: '50%',
-                  backgroundColor: 'rgba(255, 255, 255, 0.15)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}>
-                  <ArrowRight size={13} color="#ffffff" />
+                <span className="btn-arrow-badge" style={{ width: '28px', height: '28px' }}>
+                  <ArrowRight size={14} className="btn-arrow-icon" />
                 </span>
               </button>
             </div>

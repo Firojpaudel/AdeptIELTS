@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { CheckCircle2, ArrowLeft, ArrowRight, BookOpen, Award, Sparkles, Brain, Loader2, Copy, Check, AlertTriangle } from 'lucide-react';
+import { CheckCircle2, ArrowLeft, ArrowRight, BookOpen, Award, Brain, Loader2, Copy, Check, AlertTriangle, Clock, SlidersHorizontal, PenTool, ShieldCheck } from 'lucide-react';
 import { IELTS_QUESTIONS, IELTS_WRITING_PROMPTS } from '../../data/ieltsDataset';
 import { ExamTimer } from '../../components/ExamTimer';
 import { rawToReadingBand, calculateOverallBand, formatBand } from '../../lib/ieltsScoring';
@@ -140,121 +140,252 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
   if (examState === 'intro') {
     return (
       <div className="fade-in double-bezel" style={{
-        maxWidth: '760px',
-        margin: '2.5rem auto',
+        maxWidth: '780px',
+        margin: '2rem auto',
       }}>
         <div className="double-bezel-inner" style={{
           padding: '2.5rem',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.5rem',
+          gap: '1.6rem',
         }}>
           <div>
-            <span className="badge badge-brand">
-              {examMode === 'adaptive_ai' ? '⚡ AI-Calibrated Simulation' : 'Official Cambridge Simulation'}
+            <span className="badge badge-brand" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 650, padding: '0.3rem 0.75rem' }}>
+              {examMode === 'adaptive_ai' ? (
+                <>
+                  <SlidersHorizontal size={13} />
+                  <span>Adaptive Calibration Engine</span>
+                </>
+              ) : (
+                <>
+                  <ShieldCheck size={13} />
+                  <span>Cambridge Benchmark Standard</span>
+                </>
+              )}
             </span>
-            <h1 style={{ marginTop: '0.4rem', fontSize: '1.75rem', fontWeight: 750 }}>IELTS Timed Exam Simulation</h1>
-            <p style={{ marginTop: '0.4rem', fontSize: '0.95rem', color: 'var(--text-secondary)' }}>
-              Experience strict exam conditions with timed sections, split-pane reading navigation, and zero distractions.
+            <h1 style={{ marginTop: '0.5rem', fontSize: '1.85rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+              IELTS Timed Exam Simulation
+            </h1>
+            <p style={{ marginTop: '0.35rem', fontSize: '0.92rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+              Standard test center conditions with continuous timing, split-pane reading navigation, authentic answer sheets, and zero interruptions.
             </p>
           </div>
 
           {/* Simulation Engine Mode Selector */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.55rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
             <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Select Simulation Engine
             </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.85rem' }}>
               <button
                 type="button"
                 onClick={() => setExamMode('adaptive_ai')}
                 style={{
-                  padding: '0.95rem 1.15rem',
-                  borderRadius: 'var(--radius-md)',
+                  padding: '1.1rem 1.25rem',
+                  borderRadius: 'var(--radius-lg)',
                   border: `1.5px solid ${examMode === 'adaptive_ai' ? 'var(--brand-primary)' : 'var(--border-default)'}`,
                   backgroundColor: examMode === 'adaptive_ai' ? 'var(--brand-primary-subtle)' : 'var(--bg-surface)',
                   textAlign: 'left',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.35rem',
-                  transition: 'all 150ms ease-out',
+                  gap: '0.5rem',
+                  transition: 'all var(--transition-fast)',
+                  boxShadow: examMode === 'adaptive_ai' ? 'var(--shadow-xs)' : 'none',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.92rem' }}>
-                  <Sparkles size={16} />
-                  <span>Adaptive AI Simulation</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: examMode === 'adaptive_ai' ? 'var(--brand-primary)' : 'var(--text-primary)', fontWeight: 700, fontSize: '0.95rem' }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: examMode === 'adaptive_ai' ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                      color: examMode === 'adaptive_ai' ? '#ffffff' : 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <SlidersHorizontal size={15} />
+                    </div>
+                    <span>Adaptive AI Simulation</span>
+                  </div>
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    border: `2px solid ${examMode === 'adaptive_ai' ? 'var(--brand-primary)' : 'var(--border-strong)'}`,
+                    backgroundColor: examMode === 'adaptive_ai' ? 'var(--brand-primary)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {examMode === 'adaptive_ai' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ffffff' }} />}
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.79rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                  Synthesizes fresh passages & questions targeting your calibrated Band {profile?.targetBand.toFixed(1) || '7.0'} and past error patterns.
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  Synthesizes fresh passages & questions targeting your calibrated Band {(profile?.targetBand || 7.5).toFixed(1)} and past error patterns.
                 </p>
+                <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem' }}>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}>Dynamic Prompts</span>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}>Personalized</span>
+                </div>
               </button>
 
               <button
                 type="button"
                 onClick={() => setExamMode('standard')}
                 style={{
-                  padding: '0.95rem 1.15rem',
-                  borderRadius: 'var(--radius-md)',
+                  padding: '1.1rem 1.25rem',
+                  borderRadius: 'var(--radius-lg)',
                   border: `1.5px solid ${examMode === 'standard' ? 'var(--brand-primary)' : 'var(--border-default)'}`,
                   backgroundColor: examMode === 'standard' ? 'var(--brand-primary-subtle)' : 'var(--bg-surface)',
                   textAlign: 'left',
                   cursor: 'pointer',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: '0.35rem',
-                  transition: 'all 150ms ease-out',
+                  gap: '0.5rem',
+                  transition: 'all var(--transition-fast)',
+                  boxShadow: examMode === 'standard' ? 'var(--shadow-xs)' : 'none',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--text-primary)', fontWeight: 700, fontSize: '0.92rem' }}>
-                  <BookOpen size={16} />
-                  <span>Cambridge Benchmark</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: examMode === 'standard' ? 'var(--brand-primary)' : 'var(--text-primary)', fontWeight: 700, fontSize: '0.95rem' }}>
+                    <div style={{
+                      width: '28px',
+                      height: '28px',
+                      borderRadius: 'var(--radius-sm)',
+                      backgroundColor: examMode === 'standard' ? 'var(--brand-primary)' : 'var(--bg-subtle)',
+                      color: examMode === 'standard' ? '#ffffff' : 'var(--text-secondary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <BookOpen size={15} />
+                    </div>
+                    <span>Cambridge Benchmark</span>
+                  </div>
+                  <div style={{
+                    width: '18px',
+                    height: '18px',
+                    borderRadius: '50%',
+                    border: `2px solid ${examMode === 'standard' ? 'var(--brand-primary)' : 'var(--border-strong)'}`,
+                    backgroundColor: examMode === 'standard' ? 'var(--brand-primary)' : 'transparent',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    {examMode === 'standard' && <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#ffffff' }} />}
+                  </div>
                 </div>
-                <p style={{ fontSize: '0.79rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.45 }}>
-                  Standard fixed test paper from official Cambridge exam specifications.
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  Standard fixed test paper from official Cambridge IELTS examination specifications.
                 </p>
+                <div style={{ display: 'flex', gap: '0.4rem', marginTop: '0.2rem' }}>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}>Authentic Past Paper</span>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}>Fixed Standard</span>
+                </div>
               </button>
             </div>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-            gap: '1rem',
-            padding: '1.25rem',
-            backgroundColor: 'var(--bg-subtle)',
-            borderRadius: 'var(--radius-md)',
-            border: '1px solid var(--border-subtle)',
-          }}>
-            <div>
-              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>SECTION 1</div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Academic Reading</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                {examMode === 'adaptive_ai' ? 'AI-Generated scholarly passage & questions' : 'Authentic passages & TFNG'}
+          {/* Exam Modules Overview */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+            <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+              Exam Modules Included
+            </span>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gap: '0.85rem',
+            }}>
+              <div style={{
+                padding: '1.1rem 1.25rem',
+                backgroundColor: 'var(--bg-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                    <BookOpen size={16} color="var(--brand-primary)" />
+                    <span>Academic Reading</span>
+                  </div>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.68rem' }}>SECTION 1 • 60m</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  {examMode === 'adaptive_ai' ? 'Contextual academic passages with True/False/Not Given & multiple choice.' : 'Authentic past examination passages with evidence tracking.'}
+                </p>
               </div>
-            </div>
-            <div>
-              <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)' }}>SECTION 2</div>
-              <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--text-primary)' }}>Academic Writing</div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Task 2 Argumentative Essay with AI Evaluator</div>
+
+              <div style={{
+                padding: '1.1rem 1.25rem',
+                backgroundColor: 'var(--bg-subtle)',
+                borderRadius: 'var(--radius-lg)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '0.4rem',
+              }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 700, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                    <PenTool size={16} color="var(--brand-primary)" />
+                    <span>Academic Writing</span>
+                  </div>
+                  <span className="badge badge-neutral" style={{ fontSize: '0.68rem' }}>SECTION 2 • 40m</span>
+                </div>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  Task 2 Argumentative Academic Essay (250+ words) evaluated against official Cambridge 9-band criteria.
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="alert alert-info" style={{ fontSize: '0.85rem' }}>
-            <span>
-              <strong>Examination Rules:</strong> Once initiated, timers run continuously. AI guidance is locked to mirror test center conditions. Your responses will be assessed upon submission.
-            </span>
+          {/* Test Center Protocol */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '0.85rem',
+            padding: '1rem 1.25rem',
+            backgroundColor: 'var(--bg-subtle)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-lg)',
+          }}>
+            <div style={{
+              width: '32px',
+              height: '32px',
+              borderRadius: 'var(--radius-sm)',
+              backgroundColor: 'var(--brand-primary-subtle)',
+              color: 'var(--brand-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              marginTop: '2px',
+            }}>
+              <Clock size={16} />
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Official Test Center Protocol
+              </div>
+              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                Once initiated, timers run continuously to mirror real exam pressure. Coaching aids are locked until submission, after which your responses are permanently recorded to your diagnostic timeline.
+              </div>
+            </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <button onClick={onExitMock} className="btn btn-secondary">
+            <button onClick={onExitMock} className="btn btn-secondary" style={{ borderRadius: 'var(--radius-full)', padding: '0.65rem 1.35rem' }}>
               Cancel & Return
             </button>
             <button
               onClick={handleStartExam}
               disabled={isGeneratingQuestions}
               className="btn btn-primary btn-lg"
-              style={{ borderRadius: 'var(--radius-full)', gap: '0.5rem' }}
+              style={{ borderRadius: 'var(--radius-full)', padding: '0.65rem 1.5rem', gap: '0.6rem' }}
             >
               {isGeneratingQuestions ? (
                 <>
@@ -349,7 +480,7 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--brand-primary)', fontWeight: 700, fontSize: '0.92rem' }}>
-                  <Sparkles size={15} />
+                  <Award size={15} />
                   <span>Cambridge AI Writing Examiner Diagnostic</span>
                 </div>
                 <span className="badge badge-brand" style={{ fontSize: '0.7rem' }}>

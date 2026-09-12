@@ -10,6 +10,7 @@ import {
   Cpu,
   Check,
   Zap,
+  Lightbulb,
 } from 'lucide-react';
 import { IELTS_QUESTIONS } from '../../data/ieltsDataset';
 import { Question, LearnerProfile, QuestionAttempt } from '../../lib/types';
@@ -375,7 +376,13 @@ export const PracticeView = ({
                 <h3 style={{ fontSize: '1.15rem' }}>{currentQ.passageTitle}</h3>
               </div>
 
-              <div style={{ fontSize: '0.925rem', lineHeight: 1.7, color: 'var(--text-secondary)' }}>
+              <div style={{
+                fontSize: '0.95rem',
+                lineHeight: 1.8,
+                color: 'var(--text-secondary)',
+                whiteSpace: 'pre-line',
+                textAlign: 'left',
+              }}>
                 {isAnswerChecked && currentQ.evidenceSpan ? (
                   (() => {
                     const parts = currentQ.passageText.split(currentQ.evidenceSpan);
@@ -444,9 +451,10 @@ export const PracticeView = ({
 
             {/* Answer Options */}
             {currentQ.options ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                {currentQ.options.map((opt) => {
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                {currentQ.options.map((opt, optIdx) => {
                   const selected = selectedAnswer === opt;
+                  const letter = String.fromCharCode(65 + optIdx);
                   let borderColor = 'var(--border-default)';
                   let bg = 'var(--bg-surface)';
 
@@ -473,27 +481,45 @@ export const PracticeView = ({
                       key={opt}
                       onClick={() => handleSelectOption(opt)}
                       disabled={isAnswerChecked}
+                      className="card-hover"
                       style={{
                         display: 'flex',
                         alignItems: 'center',
-                        justifyContent: 'space-between',
-                        padding: '0.75rem 1rem',
-                        borderRadius: 'var(--radius-sm)',
-                        border: `1px solid ${borderColor}`,
+                        gap: '0.85rem',
+                        padding: '0.85rem 1.15rem',
+                        borderRadius: 'var(--radius-md)',
+                        border: `1.5px solid ${borderColor}`,
                         backgroundColor: bg,
                         color: 'var(--text-primary)',
-                        fontWeight: selected ? 600 : 500,
+                        fontWeight: selected ? 650 : 500,
                         textAlign: 'left',
                         transition: 'all var(--transition-fast)',
-                        boxShadow: selected ? '0 1px 2px rgba(0,0,0,0.04)' : 'none',
+                        boxShadow: selected ? 'var(--shadow-xs)' : 'none',
                         cursor: isAnswerChecked ? 'default' : 'pointer',
                       }}
                     >
-                      <span>{opt}</span>
+                      <span style={{
+                        width: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        border: `1.5px solid ${selected ? 'var(--brand-primary)' : 'var(--border-strong)'}`,
+                        backgroundColor: selected ? 'var(--brand-primary)' : 'transparent',
+                        color: selected ? '#ffffff' : 'var(--text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        flexShrink: 0,
+                        transition: 'all var(--transition-fast)',
+                      }}>
+                        {letter}
+                      </span>
+                      <span style={{ flex: 1, fontSize: '0.92rem' }}>{opt}</span>
                       {isAnswerChecked && (
                         (Array.isArray(currentQ.correctAnswer) ? currentQ.correctAnswer.includes(opt) : currentQ.correctAnswer === opt)
-                          ? <CheckCircle2 size={16} color="var(--success)" />
-                          : selected ? <XCircle size={16} color="var(--error)" /> : null
+                          ? <CheckCircle2 size={16} color="var(--success)" style={{ flexShrink: 0 }} />
+                          : selected ? <XCircle size={16} color="var(--error)" style={{ flexShrink: 0 }} /> : null
                       )}
                     </button>
                   );
@@ -590,7 +616,7 @@ export const PracticeView = ({
                     className="btn btn-secondary btn-sm"
                     style={{ alignSelf: 'flex-start', marginTop: '0.25rem', gap: '0.4rem' }}
                   >
-                    <Sparkles size={14} color="var(--brand-primary)" />
+                    <Lightbulb size={14} color="var(--brand-primary)" />
                     <span>{isLoadingTutor ? 'Analyzing Passage...' : 'Get Deep AI Tutor Breakdown'}</span>
                   </button>
                 ) : (

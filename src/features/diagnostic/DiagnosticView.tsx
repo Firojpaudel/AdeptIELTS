@@ -82,15 +82,22 @@ export const DiagnosticView = ({
 
       {/* Target band and module selection */}
       {!submitted && (
-        <div className="card" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
+        <div className="card" style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gap: '1.25rem',
+          padding: '1.25rem 1.5rem',
+          borderRadius: 'var(--radius-lg)',
+        }}>
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-              Target IELTS Band:
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 650, color: 'var(--text-secondary)', marginBottom: '0.45rem', letterSpacing: '0.01em' }}>
+              Target IELTS Band
             </label>
             <select
               value={targetBandInput}
               onChange={(e) => setTargetBandInput(Number(e.target.value))}
               className="select"
+              style={{ fontWeight: 600, padding: '0.65rem 0.85rem' }}
             >
               <option value={6.0}>Band 6.0 (Competent)</option>
               <option value={6.5}>Band 6.5 (Standard Academic Entry)</option>
@@ -102,13 +109,14 @@ export const DiagnosticView = ({
           </div>
 
           <div>
-            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, marginBottom: '0.35rem' }}>
-              Examination Module:
+            <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 650, color: 'var(--text-secondary)', marginBottom: '0.45rem', letterSpacing: '0.01em' }}>
+              Examination Module
             </label>
             <select
               value={testTypeInput}
               onChange={(e) => setTestTypeInput(e.target.value as any)}
               className="select"
+              style={{ fontWeight: 600, padding: '0.65rem 0.85rem' }}
             >
               <option value="academic">IELTS Academic (Higher Education)</option>
               <option value="general">IELTS General Training (Migration / Work)</option>
@@ -129,8 +137,10 @@ export const DiagnosticView = ({
             <div key={q.id} className="card" style={{
               display: 'flex',
               flexDirection: 'column',
-              gap: 'var(--space-4)',
-              border: submitted ? (isCorrect ? '1px solid var(--success-border)' : '1px solid var(--error-border)') : '1px solid var(--border-subtle)',
+              gap: '1.25rem',
+              padding: '1.5rem',
+              borderRadius: 'var(--radius-lg)',
+              border: submitted ? (isCorrect ? '1.5px solid var(--success-border)' : '1.5px solid var(--error-border)') : '1px solid var(--border-default)',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-muted)' }}>
@@ -141,50 +151,76 @@ export const DiagnosticView = ({
 
               {q.passageText && (
                 <div style={{
-                  padding: 'var(--space-4)',
+                  padding: '1rem 1.25rem',
                   backgroundColor: 'var(--bg-subtle)',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.9rem',
-                  lineHeight: 1.6,
+                  borderRadius: 'var(--radius-md)',
+                  fontSize: '0.92rem',
+                  lineHeight: 1.7,
                   color: 'var(--text-secondary)',
                   borderLeft: '3px solid var(--brand-primary)',
+                  whiteSpace: 'pre-line',
                 }}>
-                  <strong style={{ display: 'block', marginBottom: '0.25rem', color: 'var(--text-primary)' }}>
+                  <strong style={{ display: 'block', marginBottom: '0.35rem', color: 'var(--text-primary)', fontSize: '0.95rem' }}>
                     Excerpt: {q.passageTitle}
                   </strong>
-                  {q.passageText.slice(0, 320)}...
+                  {(() => {
+                    const paragraphs = q.passageText.split('\n\n');
+                    return paragraphs[0] || q.passageText;
+                  })()}
                 </div>
               )}
 
-              <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+              <div style={{ fontSize: '1.05rem', fontWeight: 650, color: 'var(--text-primary)', lineHeight: 1.55 }}>
                 {q.prompt}
               </div>
 
               {/* Options */}
               {q.options ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                  {q.options.map((opt) => {
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
+                  {q.options.map((opt, optIdx) => {
                     const selected = userAnswer === opt;
+                    const letter = String.fromCharCode(65 + optIdx);
                     return (
                       <button
                         key={opt}
+                        type="button"
                         onClick={() => handleSelect(q.id, opt)}
+                        className="card-hover"
                         style={{
                           display: 'flex',
                           alignItems: 'center',
-                          justifyContent: 'space-between',
-                          padding: '0.65rem 1rem',
-                          borderRadius: 'var(--radius-sm)',
-                          border: `1px solid ${selected ? 'var(--brand-primary)' : 'var(--border-default)'}`,
+                          gap: '0.85rem',
+                          padding: '0.85rem 1.15rem',
+                          borderRadius: 'var(--radius-md)',
+                          border: `1.5px solid ${selected ? 'var(--brand-primary)' : 'var(--border-default)'}`,
                           backgroundColor: selected ? 'var(--brand-primary-subtle)' : 'var(--bg-surface)',
                           color: selected ? 'var(--brand-primary)' : 'var(--text-primary)',
-                          fontWeight: selected ? 600 : 500,
+                          fontWeight: selected ? 650 : 500,
                           textAlign: 'left',
                           cursor: submitted ? 'default' : 'pointer',
+                          transition: 'all var(--transition-fast)',
+                          boxShadow: selected ? 'var(--shadow-xs)' : 'none',
                         }}
                       >
-                        <span>{opt}</span>
-                        {selected && <CheckCircle2 size={16} color="var(--brand-primary)" />}
+                        <span style={{
+                          width: '24px',
+                          height: '24px',
+                          borderRadius: '50%',
+                          border: `1.5px solid ${selected ? 'var(--brand-primary)' : 'var(--border-strong)'}`,
+                          backgroundColor: selected ? 'var(--brand-primary)' : 'transparent',
+                          color: selected ? '#ffffff' : 'var(--text-muted)',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          fontSize: '0.75rem',
+                          fontWeight: 700,
+                          flexShrink: 0,
+                          transition: 'all var(--transition-fast)',
+                        }}>
+                          {selected ? '✓' : letter}
+                        </span>
+                        <span style={{ flex: 1, fontSize: '0.92rem' }}>{opt}</span>
+                        {selected && <CheckCircle2 size={16} color="var(--brand-primary)" style={{ flexShrink: 0 }} />}
                       </button>
                     );
                   })}

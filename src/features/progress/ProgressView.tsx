@@ -8,7 +8,6 @@ import {
   Award,
   Database,
   Calendar,
-  Sparkles,
   ArrowRight,
   ShieldAlert,
   Target,
@@ -213,7 +212,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 alignItems: 'center',
                 justifyContent: 'center',
               }}>
-                <Sparkles size={18} />
+                <BarChart3 size={18} />
               </div>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -339,7 +338,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: '0.5rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--brand-primary)', letterSpacing: '0.04em' }}>
-                      <Sparkles size={14} />
+                      <ShieldCheck size={15} />
                       <span>Senior IELTS Examiner Assessment</span>
                     </div>
                     {aiCritique.bandProgressionDelta !== undefined && (
