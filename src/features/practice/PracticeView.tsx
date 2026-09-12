@@ -433,12 +433,12 @@ export const PracticeView = ({
         {/* Right Column: Question & Interaction Area */}
         <div className="double-bezel">
           <div className="double-bezel-inner" style={{
-            padding: '1.5rem',
+            padding: 'clamp(1rem, 3.5vw, 1.5rem)',
             display: 'flex',
             flexDirection: 'column',
             gap: 'var(--space-5)',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
               <span style={{ fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--brand-primary)', letterSpacing: '0.05em' }}>
                 {currentQ.questionType.replace(/_/g, ' ')}
               </span>

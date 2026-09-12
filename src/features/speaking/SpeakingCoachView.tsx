@@ -18,6 +18,7 @@ import {
   Check,
   AlertTriangle,
   ArrowRight,
+  Award,
 } from 'lucide-react';
 import { IELTS_SPEAKING_PROMPTS } from '../../data/ieltsDataset';
 import { SpeakingSession, SpeakingFeedback, SpeakingPrompt } from '../../lib/types';
@@ -310,21 +311,21 @@ export const SpeakingCoachView = () => {
       {/* Main Prompt & Examiner Card */}
       <div className="double-bezel">
         <div className="double-bezel-inner" style={{
-          padding: '1.75rem',
+          padding: 'clamp(1rem, 3.5vw, 1.5rem)',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.25rem',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <span className="badge badge-brand" style={{ fontSize: '0.75rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-brand" style={{ fontSize: '0.74rem' }}>
                 Topic: {selectedPrompt.topic}
               </span>
-              <span className="badge badge-zinc" style={{ fontSize: '0.72rem' }}>
+              <span className="badge badge-zinc" style={{ fontSize: '0.72rem', whiteSpace: 'nowrap' }}>
                 IELTS Part {selectedPrompt.part}
               </span>
             </div>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+            <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
               {activePart === 1 ? 'Conversational Questions' : activePart === 2 ? '1-Min Prep + 2-Min Speech' : 'Abstract Discussion'}
             </span>
           </div>
@@ -583,16 +584,18 @@ export const SpeakingCoachView = () => {
               type="button"
               onClick={handleEvaluate}
               disabled={isEvaluating || !transcriptText.trim()}
-              className="btn btn-primary btn-lg"
+              className="btn btn-primary"
               style={{
                 borderRadius: 'var(--radius-full)',
-                padding: '0.75rem 1.65rem',
-                fontSize: '0.92rem',
-                fontWeight: 700,
-                transition: 'transform 120ms ease-out',
+                padding: '0.6rem 1.35rem',
+                fontSize: '0.88rem',
+                fontWeight: 650,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.45rem',
               }}
             >
-              <Sparkles size={16} />
+              <Award size={15} />
               <span>{isEvaluating ? 'Examiner Evaluating Speech...' : `Evaluate Part ${activePart} Response`}</span>
             </button>
           </div>
@@ -601,7 +604,7 @@ export const SpeakingCoachView = () => {
 
       {/* Feedback Panel */}
       {feedback && (
-        <div className="card fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', padding: '1.5rem' }}>
+        <div className="card fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', padding: 'clamp(1rem, 3.5vw, 1.5rem)' }}>
           {/* Estimated Band & Examiner Summary Header */}
           <div style={{
             padding: '1.25rem',
@@ -621,7 +624,7 @@ export const SpeakingCoachView = () => {
                   Overall Band {feedback.estimated_band.toFixed(1)}
                 </div>
               </div>
-              <span className="badge badge-brand" style={{ fontSize: '0.74rem' }}>
+              <span className="badge badge-brand" style={{ fontSize: '0.74rem', whiteSpace: 'nowrap' }}>
                 Oral Communication Diagnostics
               </span>
             </div>
@@ -646,7 +649,7 @@ export const SpeakingCoachView = () => {
               onClick={() => setFeedbackTab('rubric')}
               style={{
                 flex: 1,
-                padding: '0.5rem 0.6rem',
+                padding: '0.5rem 0.4rem',
                 borderRadius: 'var(--radius-sm)',
                 backgroundColor: feedbackTab === 'rubric' ? 'var(--bg-surface)' : 'transparent',
                 color: feedbackTab === 'rubric' ? 'var(--brand-primary)' : 'var(--text-secondary)',
@@ -657,13 +660,15 @@ export const SpeakingCoachView = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.4rem',
+                gap: '0.35rem',
                 boxShadow: feedbackTab === 'rubric' ? 'var(--shadow-xs)' : 'none',
                 transition: 'all 150ms ease',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Layers size={13} />
-              <span>Speaking Rubric</span>
+              <Layers size={13} style={{ flexShrink: 0 }} />
+              <span className="feedback-tab-full">Speaking Rubric</span>
+              <span className="feedback-tab-short">Rubric</span>
             </button>
 
             <button
@@ -671,7 +676,7 @@ export const SpeakingCoachView = () => {
               onClick={() => setFeedbackTab('comparison')}
               style={{
                 flex: 1,
-                padding: '0.5rem 0.6rem',
+                padding: '0.5rem 0.4rem',
                 borderRadius: 'var(--radius-sm)',
                 backgroundColor: feedbackTab === 'comparison' ? 'var(--bg-surface)' : 'transparent',
                 color: feedbackTab === 'comparison' ? 'var(--brand-primary)' : 'var(--text-secondary)',
@@ -682,13 +687,15 @@ export const SpeakingCoachView = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.4rem',
+                gap: '0.35rem',
                 boxShadow: feedbackTab === 'comparison' ? 'var(--shadow-xs)' : 'none',
                 transition: 'all 150ms ease',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Columns size={13} />
-              <span>Side-by-Side Model Speech</span>
+              <Columns size={13} style={{ flexShrink: 0 }} />
+              <span className="feedback-tab-full">Side-by-Side Model Speech</span>
+              <span className="feedback-tab-short">Model</span>
             </button>
 
             <button
@@ -696,7 +703,7 @@ export const SpeakingCoachView = () => {
               onClick={() => setFeedbackTab('vocabulary')}
               style={{
                 flex: 1,
-                padding: '0.5rem 0.6rem',
+                padding: '0.5rem 0.4rem',
                 borderRadius: 'var(--radius-sm)',
                 backgroundColor: feedbackTab === 'vocabulary' ? 'var(--bg-surface)' : 'transparent',
                 color: feedbackTab === 'vocabulary' ? 'var(--brand-primary)' : 'var(--text-secondary)',
@@ -707,13 +714,15 @@ export const SpeakingCoachView = () => {
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '0.4rem',
+                gap: '0.35rem',
                 boxShadow: feedbackTab === 'vocabulary' ? 'var(--shadow-xs)' : 'none',
                 transition: 'all 150ms ease',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Zap size={13} />
-              <span>Spoken Upgrades ({feedback.lexical_upgrades?.length || 0})</span>
+              <Zap size={13} style={{ flexShrink: 0 }} />
+              <span className="feedback-tab-full">Spoken Lexical Upgrades ({feedback.lexical_upgrades?.length || 0})</span>
+              <span className="feedback-tab-short">Lexical ({feedback.lexical_upgrades?.length || 0})</span>
             </button>
           </div>
 
@@ -721,7 +730,7 @@ export const SpeakingCoachView = () => {
           {feedbackTab === 'rubric' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               {/* Criteria Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.65rem' }}>
                 <div style={{ padding: '0.9rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-subtle)' }}>
                   <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)', fontWeight: 600 }}>Fluency & Coherence</div>
                   <div className="font-mono" style={{ fontWeight: 800, fontSize: '1.25rem', color: 'var(--brand-primary)', marginTop: '0.2rem' }}>

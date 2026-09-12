@@ -138,11 +138,11 @@ export const DiagnosticView = ({
               display: 'flex',
               flexDirection: 'column',
               gap: '1.25rem',
-              padding: '1.5rem',
+              padding: 'clamp(1rem, 3.5vw, 1.5rem)',
               borderRadius: 'var(--radius-lg)',
               border: submitted ? (isCorrect ? '1.5px solid var(--success-border)' : '1.5px solid var(--error-border)') : '1px solid var(--border-default)',
             }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem' }}>
                 <span style={{ fontSize: '0.8125rem', fontWeight: 700, color: 'var(--text-muted)' }}>
                   QUESTION {idx + 1} OF {diagnosticQuestions.length} • {q.subskill.toUpperCase()}
                 </span>
@@ -266,6 +266,7 @@ export const DiagnosticView = ({
             onClick={handleSubmit}
             disabled={Object.keys(selectedAnswers).length < diagnosticQuestions.length}
             className="btn btn-primary btn-lg"
+            style={{ width: '100%', maxWidth: '340px', justifyContent: 'center' }}
           >
             <span>Complete Diagnostic Evaluation</span>
             <ArrowRight size={18} />
@@ -280,7 +281,7 @@ export const DiagnosticView = ({
           gap: 'var(--space-4)',
           alignItems: 'center',
           textAlign: 'center',
-          padding: 'var(--space-8)',
+          padding: 'clamp(1.25rem, 4vw, 2rem)',
         }}>
           <Award size={36} color="var(--brand-primary)" />
           <div>
@@ -292,7 +293,7 @@ export const DiagnosticView = ({
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem', marginTop: 'var(--space-2)' }}>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center' }}>
             <button onClick={onFinish} className="btn btn-primary btn-lg">
               <span>Go to Personalized Dashboard</span>
               <ArrowRight size={18} />

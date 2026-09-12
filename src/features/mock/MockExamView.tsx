@@ -141,13 +141,13 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
     return (
       <div className="fade-in double-bezel" style={{
         maxWidth: '780px',
-        margin: '2rem auto',
+        margin: 'clamp(0.75rem, 3vw, 2rem) auto',
       }}>
         <div className="double-bezel-inner" style={{
-          padding: '2.5rem',
+          padding: 'clamp(1rem, 3.5vw, 2rem)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '1.6rem',
+          gap: '1.4rem',
         }}>
           <div>
             <span className="badge badge-brand" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.75rem', fontWeight: 650, padding: '0.3rem 0.75rem' }}>
@@ -413,10 +413,10 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
     return (
       <div className="fade-in double-bezel" style={{
         maxWidth: '780px',
-        margin: '2.5rem auto',
+        margin: 'clamp(0.75rem, 3vw, 2rem) auto',
       }}>
         <div className="double-bezel-inner" style={{
-          padding: 'clamp(1.5rem, 4vw, 2.5rem)',
+          padding: 'clamp(1rem, 3.5vw, 2rem)',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.5rem',
@@ -579,7 +579,11 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
             </div>
           )}
 
-          <button onClick={onExitMock} className="btn btn-primary btn-lg">
+          <button
+            onClick={onExitMock}
+            className="btn btn-primary btn-lg"
+            style={{ width: '100%', maxWidth: '320px', justifyContent: 'center' }}
+          >
             Return to Dashboard
           </button>
         </div>

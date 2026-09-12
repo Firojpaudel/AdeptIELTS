@@ -14,6 +14,7 @@ import {
   Copy,
   Check,
   Zap,
+  FileCheck,
 } from 'lucide-react';
 import { IELTS_WRITING_PROMPTS } from '../../data/ieltsDataset';
 import { WritingSubmission, WritingFeedback } from '../../lib/types';
@@ -158,11 +159,24 @@ export const WritingCoachView = () => {
           flexDirection: 'column',
           gap: '0.75rem',
         }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <span className="badge badge-brand" style={{ fontSize: '0.74rem' }}>
-              {selectedPrompt.title}
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: '0.6rem',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+              <span className="badge badge-brand" style={{ fontSize: '0.72rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                {selectedPrompt.taskType.toUpperCase()}
+              </span>
+              <span style={{ fontSize: '0.88rem', fontWeight: 650, color: 'var(--text-primary)' }}>
+                {selectedPrompt.title}
+              </span>
+            </div>
+            <span className="badge badge-zinc" style={{ whiteSpace: 'nowrap', flexShrink: 0, fontSize: '0.76rem' }}>
+              Minimum {selectedPrompt.minWords} words
             </span>
-            <span className="badge badge-zinc">Minimum {selectedPrompt.minWords} words</span>
           </div>
 
           <div style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.55 }}>
@@ -272,27 +286,35 @@ export const WritingCoachView = () => {
             flexDirection: 'column',
             gap: '1rem',
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.6rem',
+            }}>
               <div>
                 <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                   Essay Response Workspace
                 </span>
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', margin: 0 }}>
                   Auto-formatted with word limits and band requirement feedback
                 </p>
               </div>
 
               <div style={{
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.4rem',
-                padding: '0.25rem 0.65rem',
+                gap: '0.35rem',
+                padding: '0.28rem 0.68rem',
                 borderRadius: 'var(--radius-full)',
                 backgroundColor: isWordCountSufficient ? 'var(--success-subtle)' : 'var(--warning-subtle)',
                 border: `1px solid ${isWordCountSufficient ? 'var(--success-border)' : 'var(--warning-border)'}`,
                 color: isWordCountSufficient ? 'var(--success)' : 'var(--warning)',
-                fontSize: '0.8rem',
-                fontWeight: 600,
+                fontSize: '0.78rem',
+                fontWeight: 650,
+                whiteSpace: 'nowrap',
+                flexShrink: 0,
               }}>
                 <span className="font-mono">{wordCount}</span> / {minRequired} words
               </div>
@@ -314,11 +336,19 @@ export const WritingCoachView = () => {
               }}
             />
 
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem' }}>
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: '0.75rem',
+              paddingTop: '0.5rem',
+            }}>
               <button
                 onClick={handleReset}
                 className="btn btn-secondary btn-sm"
                 disabled={!essayText && !feedback}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
               >
                 <RotateCcw size={14} />
                 <span>Clear Editor</span>
@@ -327,10 +357,18 @@ export const WritingCoachView = () => {
               <button
                 onClick={handleEvaluate}
                 disabled={isEvaluating || wordCount < 30}
-                className="btn btn-primary btn-lg"
-                style={{ borderRadius: 'var(--radius-full)', padding: '0.65rem 1.4rem' }}
+                className="btn btn-primary"
+                style={{
+                  borderRadius: 'var(--radius-full)',
+                  padding: '0.6rem 1.35rem',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '0.45rem',
+                  fontSize: '0.88rem',
+                  fontWeight: 650,
+                }}
               >
-                <Sparkles size={16} />
+                <FileCheck size={16} />
                 <span>{isEvaluating ? 'Evaluating Rubric...' : 'Evaluate Band & Feedback'}</span>
               </button>
             </div>
@@ -339,10 +377,17 @@ export const WritingCoachView = () => {
 
         {/* Detailed Feedback Panel */}
         {feedback && (
-          <div className="card fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', maxHeight: '720px', overflowY: 'auto' }}>
+          <div className="card fade-in" style={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '1.25rem',
+            padding: 'clamp(1rem, 3.5vw, 1.5rem)',
+            maxHeight: '750px',
+            overflowY: 'auto'
+          }}>
             {/* Band Score & Examiner Summary Header */}
             <div style={{
-              padding: '1.25rem',
+              padding: '1.15rem 1.25rem',
               backgroundColor: 'var(--brand-primary-subtle)',
               border: '1px solid var(--brand-primary-border)',
               borderRadius: 'var(--radius-md)',
@@ -359,7 +404,7 @@ export const WritingCoachView = () => {
                     Overall Band {feedback.estimated_band.toFixed(1)}
                   </div>
                 </div>
-                <span className="badge badge-brand" style={{ fontSize: '0.75rem' }}>
+                <span className="badge badge-brand" style={{ fontSize: '0.75rem', whiteSpace: 'nowrap' }}>
                   Official Public Rubrics
                 </span>
               </div>
@@ -384,7 +429,7 @@ export const WritingCoachView = () => {
                 onClick={() => setFeedbackTab('rubric')}
                 style={{
                   flex: 1,
-                  padding: '0.5rem 0.6rem',
+                  padding: '0.5rem 0.4rem',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: feedbackTab === 'rubric' ? 'var(--bg-surface)' : 'transparent',
                   color: feedbackTab === 'rubric' ? 'var(--brand-primary)' : 'var(--text-secondary)',
@@ -395,13 +440,15 @@ export const WritingCoachView = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.4rem',
+                  gap: '0.35rem',
                   boxShadow: feedbackTab === 'rubric' ? 'var(--shadow-xs)' : 'none',
                   transition: 'all 150ms ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Layers size={13} />
-                <span>Diagnostic Rubric</span>
+                <Layers size={13} style={{ flexShrink: 0 }} />
+                <span className="feedback-tab-full">Diagnostic Rubric</span>
+                <span className="feedback-tab-short">Rubric</span>
               </button>
 
               <button
@@ -409,7 +456,7 @@ export const WritingCoachView = () => {
                 onClick={() => setFeedbackTab('comparison')}
                 style={{
                   flex: 1,
-                  padding: '0.5rem 0.6rem',
+                  padding: '0.5rem 0.4rem',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: feedbackTab === 'comparison' ? 'var(--bg-surface)' : 'transparent',
                   color: feedbackTab === 'comparison' ? 'var(--brand-primary)' : 'var(--text-secondary)',
@@ -420,13 +467,15 @@ export const WritingCoachView = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.4rem',
+                  gap: '0.35rem',
                   boxShadow: feedbackTab === 'comparison' ? 'var(--shadow-xs)' : 'none',
                   transition: 'all 150ms ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Columns size={13} />
-                <span>Side-by-Side Model</span>
+                <Columns size={13} style={{ flexShrink: 0 }} />
+                <span className="feedback-tab-full">Side-by-Side Model</span>
+                <span className="feedback-tab-short">Model</span>
               </button>
 
               <button
@@ -434,7 +483,7 @@ export const WritingCoachView = () => {
                 onClick={() => setFeedbackTab('vocabulary')}
                 style={{
                   flex: 1,
-                  padding: '0.5rem 0.6rem',
+                  padding: '0.5rem 0.4rem',
                   borderRadius: 'var(--radius-sm)',
                   backgroundColor: feedbackTab === 'vocabulary' ? 'var(--bg-surface)' : 'transparent',
                   color: feedbackTab === 'vocabulary' ? 'var(--brand-primary)' : 'var(--text-secondary)',
@@ -445,13 +494,15 @@ export const WritingCoachView = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: '0.4rem',
+                  gap: '0.35rem',
                   boxShadow: feedbackTab === 'vocabulary' ? 'var(--shadow-xs)' : 'none',
                   transition: 'all 150ms ease',
+                  whiteSpace: 'nowrap',
                 }}
               >
-                <Zap size={13} />
-                <span>Lexical Upgrades ({feedback.lexical_upgrades?.length || 0})</span>
+                <Zap size={13} style={{ flexShrink: 0 }} />
+                <span className="feedback-tab-full">Lexical Upgrades ({feedback.lexical_upgrades?.length || 0})</span>
+                <span className="feedback-tab-short">Lexical ({feedback.lexical_upgrades?.length || 0})</span>
               </button>
             </div>
 
@@ -460,10 +511,10 @@ export const WritingCoachView = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {/* 4 Official Criteria Scores */}
                 <div>
-                  <h4 style={{ fontSize: '0.82rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.45rem', letterSpacing: '0.04em' }}>
+                  <h4 style={{ fontSize: '0.82rem', textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem', letterSpacing: '0.04em' }}>
                     IELTS 4 Assessment Criteria
                   </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.5rem' }}>
                     <div style={{ padding: '0.6rem 0.8rem', backgroundColor: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', border: '1px solid var(--border-subtle)' }}>
                       <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>Task Response</div>
                       <div className="font-mono" style={{ fontWeight: 750, fontSize: '1.15rem', color: 'var(--brand-primary)' }}>
@@ -504,7 +555,7 @@ export const WritingCoachView = () => {
                     borderRadius: 'var(--radius-md)',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--success)', fontWeight: 700, fontSize: '0.86rem', marginBottom: '0.4rem' }}>
-                      <CheckCircle2 size={15} />
+                      <CheckCircle2 size={15} style={{ flexShrink: 0 }} />
                       <span>What Went Right (Demonstrated Strengths)</span>
                     </div>
                     <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', margin: 0 }}>
@@ -522,7 +573,7 @@ export const WritingCoachView = () => {
                     borderRadius: 'var(--radius-md)',
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', color: 'var(--danger)', fontWeight: 700, fontSize: '0.86rem', marginBottom: '0.4rem' }}>
-                      <AlertTriangle size={15} />
+                      <AlertTriangle size={15} style={{ flexShrink: 0 }} />
                       <span>What Went Wrong (Crucial Areas Holding You Back)</span>
                     </div>
                     <ul style={{ paddingLeft: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.35rem', margin: 0 }}>

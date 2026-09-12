@@ -880,6 +880,23 @@ html.theme-transitioning *::after {
   }
 }
 
+/* Feedback Tabs Responsive Utilities (Full labels on desktop, concise labels on mobile) */
+.feedback-tab-full {
+  display: inline;
+}
+.feedback-tab-short {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  .feedback-tab-full {
+    display: none;
+  }
+  .feedback-tab-short {
+    display: inline;
+  }
+}
+
 /* Rail Collapse Toggle & Foolproof CSS Tooltip */
 .rail-toggle-wrapper {
   position: relative;
