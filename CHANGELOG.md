@@ -4,6 +4,24 @@ All notable changes to the AdeptIELTS project are documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [0.4.0] - 2026-09-12
+
+### Added
+- Groq Whisper STT fallback engine (`whisper-large-v3-turbo`) providing voice transcription on mobile browsers (Android Chrome, Firefox, iOS Safari) when Web Speech API is unavailable or returns empty transcripts.
+- Active transcription status indicator with spinner in AudioRecorder during server-side Whisper transcription.
+- Responsive concise tabs (`.feedback-tab-short` / `.feedback-tab-full`) across Writing Coach and Speaking Coach, preventing 2-line wrapped buttons on phone screens.
+
+### Changed
+- Comprehensive mobile UI overhaul across all coach views:
+  - **Writing Coach**: Added proper clamp padding to assessment feedback card, eliminated deformed title badges with clean flex-wrapping, fixed word count pill multi-line wrapping with `whiteSpace: nowrap`, and made 4 criteria tiles fluid.
+  - **Speaking Coach**: Responsive clamp padding on task and feedback cards, topic badge wrap, touch-friendly evaluate button, and mobile criteria grid.
+  - **Diagnostic Evaluation**: Replaced static 32px padding with responsive clamp padding and centered mobile action button wrapping.
+  - **Mock Exam Simulation**: Reclaimed 50px+ of horizontal space on phone screens by replacing static 40px padding with fluid clamp padding on intro and results cards.
+  - **Practice Drills**: Responsive question card padding and header flex-wrapping.
+- Mobile navbar declutter: replaced overflowing user name button with initials avatar circle, tightened streak indicator, reduced mobile header height to 48px, and added responsive icon-only logo on screens < 480px.
+
+---
+
 ## [0.3.0] - 2026-09-12
 
 ### Added
@@ -14,9 +32,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - On-demand "Fetch Live Models" manual discovery button for immediate provider refresh.
 - Automated multi-model fallback cascade during execution to handle decommissioned or enterprise-gated checkpoints without breaking active candidate test sessions.
 - Timed Exam Simulation configuration card in MockExamView with modular section selector cards and exam conduct notices.
-- Groq Whisper STT fallback engine (`whisper-large-v3-turbo`) providing seamless voice transcription on mobile browsers (Android Chrome, Firefox, iOS Safari) when Web Speech API is unavailable or returns empty transcripts.
-- Mobile navbar declutter: replaced overflowing name button with initials avatar circle, tightened streak indicator, reduced mobile header height to 48px, and added responsive icon-only logo on screens < 480px.
-- Enhanced mobile viewport responsiveness with comfortable safe-area padding and compact touch targets.
 
 ### Changed
 - Migrated Groq Cloud default model to `openai/gpt-oss-120b` and updated production presets to `openai/gpt-oss-120b`, `openai/gpt-oss-20b`, and `qwen/qwen3.8-27b`.
