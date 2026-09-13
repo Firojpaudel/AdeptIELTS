@@ -191,7 +191,7 @@ export const PracticeView = ({
       <div className="double-bezel">
         <div className="double-bezel-inner" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 'min(100%, 280px)' }}>
               <div style={{
                 width: '32px',
                 height: '32px',
@@ -201,19 +201,22 @@ export const PracticeView = ({
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
+                marginTop: '2px',
               }}>
                 <Sparkles size={16} />
               </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
                     Adaptive AI Question Generator
                   </h3>
-                  <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
-                    Context-Aware Engine
+                  <span className="badge badge-brand" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    <span className="feedback-tab-full">Context-Aware Engine</span>
+                    <span className="feedback-tab-short">AI Engine</span>
                   </span>
                 </div>
-                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.1rem' }}>
+                <p style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '0.15rem', lineHeight: 1.45 }}>
                   Generates fresh, authentic reading passages with line citations tuned to your stored error patterns.
                 </p>
               </div>
@@ -264,7 +267,8 @@ export const PracticeView = ({
                 style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
               >
                 <Sparkles size={13} className={isGenerating ? 'spin' : ''} />
-                <span>{isGenerating ? 'Generating Passage & Questions...' : 'Generate Adaptive Questions'}</span>
+                <span className="feedback-tab-full">{isGenerating ? 'Generating Passage & Questions...' : 'Generate Adaptive Questions'}</span>
+                <span className="feedback-tab-short">{isGenerating ? 'Generating...' : 'Generate Questions'}</span>
               </button>
             </div>
           </div>
@@ -371,15 +375,17 @@ export const PracticeView = ({
               flexDirection: 'column',
               gap: 'var(--space-4)',
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)' }}>
-                <BookOpen size={18} color="var(--brand-primary)" />
-                <h3 style={{ fontSize: '1.15rem' }}>{currentQ.passageTitle}</h3>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: 'var(--space-3)' }}>
+                <BookOpen size={18} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                <h3 style={{ fontSize: '1.15rem', fontWeight: 750, color: 'var(--text-primary)', margin: 0, lineHeight: 1.35 }}>{currentQ.passageTitle}</h3>
               </div>
 
               <div style={{
-                fontSize: '0.95rem',
-                lineHeight: 1.8,
-                color: 'var(--text-secondary)',
+                fontSize: 'clamp(0.95rem, 2.2vw, 1.02rem)',
+                lineHeight: 1.76,
+                color: 'var(--text-primary)',
+                fontWeight: 450,
+                letterSpacing: '-0.005em',
                 whiteSpace: 'pre-line',
                 textAlign: 'left',
               }}>

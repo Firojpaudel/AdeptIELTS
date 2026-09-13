@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   X,
   ChevronLeft,
@@ -94,6 +95,17 @@ export const StudyCalendarModal = ({
     };
   }, [calendarCells, currentYear, currentMonthIndex]);
 
+  // Lock background body scroll while calendar modal is active on mobile
+  useEffect(() => {
+    if (isOpen) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handlePrevMonth = () => {
@@ -137,18 +149,20 @@ export const StudyCalendarModal = ({
     }
   };
 
-  return (
+  return createPortal(
     <div
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'rgba(9, 9, 11, 0.65)',
+        backgroundColor: 'rgba(9, 9, 11, 0.72)',
         backdropFilter: 'blur(8px)',
-        zIndex: 9999,
+        WebkitBackdropFilter: 'blur(8px)',
+        zIndex: 99999,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: 'clamp(0.5rem, 2vw, 1.25rem)',
+        padding: 'clamp(0.4rem, 2vw, 1.25rem)',
+        boxSizing: 'border-box',
       }}
       onClick={onClose}
     >
@@ -157,11 +171,11 @@ export const StudyCalendarModal = ({
         style={{
           width: '100%',
           maxWidth: '780px',
-          maxHeight: '92vh',
+          maxHeight: 'min(92vh, 92dvh)',
           display: 'flex',
           flexDirection: 'column',
           position: 'relative',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35)',
         }}
         onClick={e => e.stopPropagation()}
       >
@@ -171,8 +185,8 @@ export const StudyCalendarModal = ({
           className="btn btn-ghost btn-sm"
           style={{
             position: 'absolute',
-            top: '0.85rem',
-            right: '0.85rem',
+            top: '0.75rem',
+            right: '0.75rem',
             zIndex: 40,
             padding: '6px',
             borderRadius: 'var(--radius-sm)',
@@ -190,19 +204,22 @@ export const StudyCalendarModal = ({
         <div
           className="double-bezel-inner"
           style={{
-            padding: 'clamp(1rem, 3.5vw, 1.75rem)',
+            padding: 'clamp(0.85rem, 3vw, 1.65rem)',
             overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
             display: 'flex',
             flexDirection: 'column',
-            gap: '1.25rem',
+            gap: '1rem',
+            flex: 1,
+            minHeight: 0,
           }}
         >
           {/* Header */}
           <div style={{ paddingRight: '2.5rem', flexShrink: 0 }}>
-            <h2 style={{ fontSize: '1.28rem', fontWeight: 750, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 750, letterSpacing: '-0.02em', color: 'var(--text-primary)' }}>
               Study Calendar
             </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>
               Daily activity tracking and consecutive study streak.
             </p>
           </div>
@@ -210,8 +227,8 @@ export const StudyCalendarModal = ({
           {/* Top Streak & Consistency Dashboard */}
           <div style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
-            gap: '0.75rem',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 120px), 1fr))',
+            gap: '0.65rem',
             flexShrink: 0,
             alignItems: 'stretch',
           }}>
@@ -318,8 +335,10 @@ export const StudyCalendarModal = ({
             borderRadius: 'var(--radius-md)',
             border: '1px solid var(--border-subtle)',
             flexShrink: 0,
+            flexWrap: 'wrap',
+            gap: '0.5rem',
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <button
                 onClick={handlePrevMonth}
                 className="btn btn-ghost btn-sm"
@@ -329,7 +348,7 @@ export const StudyCalendarModal = ({
                 <ChevronLeft size={16} />
               </button>
 
-              <h3 style={{ fontSize: '1.02rem', fontWeight: 750, color: 'var(--text-primary)', letterSpacing: '-0.01em', minWidth: '160px', textAlign: 'center' }}>
+              <h3 style={{ fontSize: '1.02rem', fontWeight: 750, color: 'var(--text-primary)', letterSpacing: '-0.01em', minWidth: 'clamp(120px, 30vw, 160px)', textAlign: 'center' }}>
                 {MONTH_NAMES[currentMonthIndex]} {currentYear}
               </h3>
 
@@ -395,8 +414,8 @@ export const StudyCalendarModal = ({
                     key={idx}
                     onClick={() => setSelectedDateStr(cell.date)}
                     style={{
-                      minHeight: '68px',
-                      padding: '0.45rem',
+                      minHeight: 'clamp(46px, 8vw, 62px)',
+                      padding: 'clamp(0.2rem, 1vw, 0.4rem)',
                       borderRight: (idx + 1) % 7 !== 0 ? '1px solid var(--border-subtle)' : 'none',
                       borderBottom: idx < calendarCells.length - 7 ? '1px solid var(--border-subtle)' : 'none',
                       backgroundColor: isSelected
@@ -481,13 +500,13 @@ export const StudyCalendarModal = ({
             backgroundColor: 'var(--bg-surface)',
             border: '1px solid var(--border-default)',
             borderRadius: 'var(--radius-md)',
-            padding: '1.1rem 1.25rem',
+            padding: 'clamp(0.85rem, 3vw, 1.25rem)',
             display: 'flex',
             flexDirection: 'column',
             gap: '0.85rem',
             flexShrink: 0,
           }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.6rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '0.6rem', flexWrap: 'wrap', gap: '0.5rem' }}>
               <div>
                 <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
                   Daily Activity Breakdown
@@ -574,7 +593,7 @@ export const StudyCalendarModal = ({
               }}>
                 <div>No study sessions were logged on this calendar date.</div>
                 {onNavigateToTab && (
-                  <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                     <button
                       onClick={() => {
                         onClose();
@@ -602,6 +621,7 @@ export const StudyCalendarModal = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };

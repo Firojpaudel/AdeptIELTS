@@ -113,8 +113,9 @@ export const ExamTimer = ({
         }}
         title="Click when you are ready to begin the timed exam"
       >
-        <Play size={13} style={{ fill: 'currentColor', color: 'var(--brand-primary)' }} />
-        <span>Start Timed Session ({totalMin}m)</span>
+        <Play size={13} style={{ fill: 'currentColor', color: 'var(--brand-primary)', flexShrink: 0 }} />
+        <span className="feedback-tab-full">Start Timed Session ({totalMin}m)</span>
+        <span className="feedback-tab-short">Timed ({totalMin}m)</span>
       </button>
     );
   }

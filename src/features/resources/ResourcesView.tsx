@@ -12,6 +12,7 @@ import {
   FileText,
   BookMarked,
   Maximize2,
+  Lightbulb,
 } from 'lucide-react';
 import { IELTS_RESOURCES, IELTS_BOOKS } from '../../data/ieltsDataset';
 import { LearningResource, IELTSBook, SkillType } from '../../lib/types';
@@ -115,16 +116,16 @@ export const ResourcesView = () => {
             </button>
 
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.92rem', color: 'var(--text-primary)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <div style={{ fontWeight: 700, fontSize: '0.94rem', color: 'var(--text-primary)', lineHeight: 1.35 }}>
                   {readingBook.title}
                 </div>
                 {readingBook.quality === 'vector_hd' ? (
-                  <span className="badge badge-brand" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}>
+                  <span className="badge badge-brand" style={{ fontSize: '0.7rem', padding: '0.18rem 0.55rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     Vector HD
                   </span>
                 ) : (
-                  <span className="badge badge-zinc" style={{ fontSize: '0.68rem', padding: '0.15rem 0.45rem' }}>
+                  <span className="badge badge-zinc" style={{ fontSize: '0.7rem', padding: '0.18rem 0.55rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
                     Authentic Edition
                   </span>
                 )}
@@ -329,16 +330,39 @@ export const ResourcesView = () => {
           </div>
 
           {/* Structured Guide Sections */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2.25rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
             {guide.sections.map((sec, idx) => (
-              <section key={idx} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.02em' }}>
-                  {sec.title}
-                </h2>
+              <section
+                key={idx}
+                id={`guide-sec-${idx}`}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '1rem',
+                  scrollMarginTop: '72px',
+                  paddingTop: idx > 0 ? '1.75rem' : '0.25rem',
+                  borderTop: idx > 0 ? '1px solid var(--border-subtle)' : 'none',
+                }}
+              >
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                  <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                    Section {idx + 1}
+                  </span>
+                  <h2 style={{
+                    fontSize: 'clamp(1.18rem, 3.6vw, 1.45rem)',
+                    fontWeight: 750,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.35,
+                  }}>
+                    {sec.title}
+                  </h2>
+                </div>
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
                   {sec.content.map((p, pIdx) => (
-                    <p key={pIdx} style={{ fontSize: '0.94rem', lineHeight: 1.7, color: 'var(--text-secondary)', margin: 0 }}>
+                    <p key={pIdx} style={{ fontSize: '0.94rem', lineHeight: 1.72, color: 'var(--text-secondary)', margin: 0 }}>
                       {p}
                     </p>
                   ))}
@@ -348,14 +372,47 @@ export const ResourcesView = () => {
                   <div style={{
                     backgroundColor: 'var(--brand-primary-subtle)',
                     border: '1px solid var(--brand-primary-border)',
+                    borderLeft: '4px solid var(--brand-primary)',
                     borderRadius: 'var(--radius-md)',
-                    padding: '1rem 1.25rem',
-                    fontSize: '0.88rem',
-                    lineHeight: 1.55,
-                    color: 'var(--text-primary)',
-                    fontWeight: 500,
+                    padding: '1.1rem 1.25rem',
+                    margin: '0.5rem 0',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    gap: '0.85rem',
                   }}>
-                    💡 {sec.callout}
+                    <div style={{
+                      width: '30px',
+                      height: '30px',
+                      borderRadius: 'var(--radius-md)',
+                      backgroundColor: 'rgba(13, 148, 136, 0.15)',
+                      color: 'var(--brand-primary)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      flexShrink: 0,
+                      marginTop: '2px',
+                    }}>
+                      <Lightbulb size={17} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontWeight: 700,
+                        fontSize: '0.78rem',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        color: 'var(--brand-primary)',
+                      }}>
+                        Core Strategy Insight
+                      </div>
+                      <div style={{
+                        fontSize: '0.92rem',
+                        lineHeight: 1.62,
+                        color: 'var(--text-primary)',
+                        fontWeight: 500,
+                      }}>
+                        {sec.callout}
+                      </div>
+                    </div>
                   </div>
                 )}
 
@@ -521,12 +578,14 @@ export const ResourcesView = () => {
           backgroundColor: 'var(--bg-subtle)',
           border: '1px solid var(--border-subtle)',
           gap: '4px',
+          maxWidth: '100%',
+          overflowX: 'auto',
         }}>
           <button
             type="button"
             onClick={() => setViewMode('guides')}
             style={{
-              padding: '0.45rem 1.15rem',
+              padding: '0.45rem clamp(0.75rem, 2.5vw, 1.15rem)',
               borderRadius: 'var(--radius-full)',
               fontSize: '0.82rem',
               fontWeight: 650,
@@ -537,18 +596,20 @@ export const ResourcesView = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.45rem',
+              whiteSpace: 'nowrap',
               transition: 'all 140ms ease',
             }}
           >
             <FileText size={14} />
-            <span>Strategy Guides ({IELTS_RESOURCES.length})</span>
+            <span className="feedback-tab-full">Strategy Guides ({IELTS_RESOURCES.length})</span>
+            <span className="feedback-tab-short">Guides ({IELTS_RESOURCES.length})</span>
           </button>
 
           <button
             type="button"
             onClick={() => setViewMode('books')}
             style={{
-              padding: '0.45rem 1.15rem',
+              padding: '0.45rem clamp(0.75rem, 2.5vw, 1.15rem)',
               borderRadius: 'var(--radius-full)',
               fontSize: '0.82rem',
               fontWeight: 650,
@@ -559,20 +620,22 @@ export const ResourcesView = () => {
               display: 'inline-flex',
               alignItems: 'center',
               gap: '0.45rem',
+              whiteSpace: 'nowrap',
               transition: 'all 140ms ease',
             }}
           >
             <Library size={14} />
-            <span>Complete Books & PDFs ({IELTS_BOOKS.length})</span>
+            <span className="feedback-tab-full">Complete Books & PDFs ({IELTS_BOOKS.length})</span>
+            <span className="feedback-tab-short">Books & PDFs ({IELTS_BOOKS.length})</span>
           </button>
         </div>
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: '1.25rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: '1rem', alignItems: 'center' }}>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', padding: 'clamp(1rem, 3.5vw, 1.25rem)' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', alignItems: 'center', justifyContent: 'space-between' }}>
           {/* Search Box */}
-          <div style={{ position: 'relative' }}>
+          <div style={{ position: 'relative', flex: '1 1 240px' }}>
             <Search size={16} color="var(--text-muted)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
             <input
               type="text"
@@ -623,7 +686,7 @@ export const ResourcesView = () => {
 
       {/* VIEW MODE 1: STRATEGY GUIDES GRID */}
       {viewMode === 'guides' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
           {filteredGuides.map((res) => {
             const isStudied = studiedIds.includes(res.id);
 
@@ -636,7 +699,7 @@ export const ResourcesView = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '1.5rem',
+                  padding: 'clamp(1rem, 3.5vw, 1.5rem)',
                   gap: '1.25rem',
                   cursor: 'pointer',
                   border: isStudied ? '1.5px solid var(--brand-primary)' : '1px solid var(--border-default)',
@@ -730,7 +793,7 @@ export const ResourcesView = () => {
 
       {/* VIEW MODE 2: E-BOOKS & PDF LIBRARY GRID */}
       {viewMode === 'books' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: '1.25rem' }}>
           {filteredBooks.map((book) => {
             const isStudied = studiedIds.includes(book.id);
             const pdfFileName = book.pdfFileName || `${book.identifier}.pdf`;
@@ -745,7 +808,7 @@ export const ResourcesView = () => {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  padding: '1.5rem',
+                  padding: 'clamp(1rem, 3.5vw, 1.5rem)',
                   gap: '1.25rem',
                   cursor: 'pointer',
                   border: isStudied ? '1.5px solid var(--brand-primary)' : '1px solid var(--border-default)',
@@ -764,13 +827,13 @@ export const ResourcesView = () => {
                       </span>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
                       {book.quality === 'vector_hd' && (
-                        <span className="badge badge-brand" style={{ fontSize: '0.66rem', padding: '1px 6px' }}>
+                        <span className="badge badge-brand" style={{ fontSize: '0.66rem', padding: '1px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                           Vector HD
                         </span>
                       )}
-                      <span className="badge badge-zinc" style={{ fontSize: '0.66rem', padding: '1px 6px' }}>
+                      <span className="badge badge-zinc" style={{ fontSize: '0.66rem', padding: '1px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>
                         {book.downloads}
                       </span>
                     </div>

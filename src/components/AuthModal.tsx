@@ -422,7 +422,7 @@ export const AuthModal = ({
             </div>
 
             {authMode === 'signup' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '0.75rem' }}>
                 <div>
                   <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, marginBottom: '0.3rem', color: 'var(--text-primary)' }}>
                     Target IELTS Band:

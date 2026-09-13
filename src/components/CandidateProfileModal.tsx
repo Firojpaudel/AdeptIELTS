@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import {
   User,
   Plus,
@@ -90,7 +91,7 @@ export const CandidateProfileModal = ({
   const otherProfiles = profiles.filter(p => p.id !== currentProfile.id);
   const initials = currentProfile.avatar || currentProfile.displayName.slice(0, 2).toUpperCase();
 
-  return (
+  return createPortal(
     <div
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
@@ -208,7 +209,7 @@ export const CandidateProfileModal = ({
             {/* Candidate Specs Grid */}
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(3, 1fr)',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(105px, 1fr))',
               gap: '0.6rem',
               paddingTop: '0.75rem',
               borderTop: '1px solid var(--border-subtle)',
@@ -390,7 +391,7 @@ export const CandidateProfileModal = ({
                 />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '0.6rem' }}>
                 <div>
                   <label style={{ fontSize: '0.78rem', fontWeight: 600, display: 'block', marginBottom: '0.25rem' }}>
                     Target Band:
@@ -496,6 +497,7 @@ export const CandidateProfileModal = ({
         onClose={() => setShowCalendar(false)}
         candidateName={currentProfile.displayName}
       />
-    </div>
+    </div>,
+    document.body
   );
 };

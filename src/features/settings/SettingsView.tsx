@@ -292,7 +292,7 @@ export const SettingsView = ({
 
       {/* SECTION 1: CANDIDATE PROFILE & TARGET BAND */}
       <div className="double-bezel">
-        <div className="double-bezel-inner" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+        <div className="double-bezel-inner" style={{ padding: 'clamp(1.15rem, 4vw, 2rem)', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
@@ -355,7 +355,7 @@ export const SettingsView = ({
           </div>
 
           {/* Exam Module & Timing Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '1.5rem' }}>
             
             {/* Exam Module Segmented Switcher */}
             <div>
@@ -364,7 +364,7 @@ export const SettingsView = ({
               </label>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))',
                 padding: '4px',
                 borderRadius: 'var(--radius-md)',
                 backgroundColor: 'var(--bg-subtle)',
@@ -467,7 +467,7 @@ export const SettingsView = ({
 
       {/* SECTION 2: AI ORCHESTRATION & FREE TIER ROUTING */}
       <div className="double-bezel">
-        <div className="double-bezel-inner" style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
+        <div className="double-bezel-inner" style={{ padding: 'clamp(1.15rem, 4vw, 2rem)', display: 'flex', flexDirection: 'column', gap: '1.75rem' }}>
           
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
@@ -494,7 +494,7 @@ export const SettingsView = ({
             </label>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))',
               gap: '1rem',
             }}>
               {aiProviders.map(prov => {
@@ -654,50 +654,52 @@ export const SettingsView = ({
                 borderRadius: 'var(--radius-md)',
                 border: '1px solid var(--border-subtle)',
               }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
-                  <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                    <Cpu size={13} color="var(--brand-primary)" />
-                    <span>Model Engine / Checkpoint:</span>
-                  </label>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
-                    <button
-                      type="button"
-                      onClick={handleFetchLiveModels}
-                      disabled={isFetchingLiveModels || !aiSettings.apiKey}
-                      className="btn btn-ghost btn-sm"
-                      style={{
-                        fontSize: '0.72rem',
-                        padding: '0.2rem 0.55rem',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '0.35rem',
-                        color: 'var(--brand-primary)',
-                        border: '1px solid var(--brand-primary-border)',
-                        backgroundColor: 'var(--brand-primary-subtle)',
-                        borderRadius: 'var(--radius-sm)',
-                        cursor: !aiSettings.apiKey ? 'not-allowed' : 'pointer',
-                      }}
-                      title="Query live /v1/models endpoint to fetch all active models for your API key"
-                    >
-                      <RefreshCw size={11} className={isFetchingLiveModels ? 'spin' : ''} />
-                      <span>{isFetchingLiveModels ? 'Querying API...' : 'Fetch Live Models'}</span>
-                    </button>
-                    {lastSyncTime && (
-                      <span style={{
-                        fontSize: '0.7rem',
-                        color: 'var(--brand-primary)',
-                        backgroundColor: 'var(--brand-surface)',
-                        padding: '0.15rem 0.5rem',
-                        borderRadius: 'var(--radius-full)',
-                        fontWeight: 600,
-                        border: '1px solid var(--brand-primary-border)',
-                      }}>
-                        Auto-synced today
-                      </span>
-                    )}
-                    <span style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
-                      Active: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)}</strong>
-                    </span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.4rem' }}>
+                    <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                      <Cpu size={13} color="var(--brand-primary)" />
+                      <span>Model Engine / Checkpoint:</span>
+                    </label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      <button
+                        type="button"
+                        onClick={handleFetchLiveModels}
+                        disabled={isFetchingLiveModels || !aiSettings.apiKey}
+                        className="btn btn-ghost btn-sm"
+                        style={{
+                          fontSize: '0.72rem',
+                          padding: '0.2rem 0.55rem',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '0.35rem',
+                          color: 'var(--brand-primary)',
+                          border: '1px solid var(--brand-primary-border)',
+                          backgroundColor: 'var(--brand-primary-subtle)',
+                          borderRadius: 'var(--radius-sm)',
+                          cursor: !aiSettings.apiKey ? 'not-allowed' : 'pointer',
+                        }}
+                        title="Query live /v1/models endpoint to fetch all active models for your API key"
+                      >
+                        <RefreshCw size={11} className={isFetchingLiveModels ? 'spin' : ''} />
+                        <span>{isFetchingLiveModels ? 'Querying API...' : 'Fetch Live Models'}</span>
+                      </button>
+                      {lastSyncTime && (
+                        <span style={{
+                          fontSize: '0.7rem',
+                          color: 'var(--brand-primary)',
+                          backgroundColor: 'var(--brand-surface)',
+                          padding: '0.15rem 0.5rem',
+                          borderRadius: 'var(--radius-full)',
+                          fontWeight: 600,
+                          border: '1px solid var(--brand-primary-border)',
+                        }}>
+                          Auto-synced today
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div style={{ fontSize: '0.74rem', color: 'var(--text-muted)' }}>
+                    Active: <strong style={{ color: 'var(--brand-primary)', fontFamily: 'var(--font-mono)' }}>{aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)}</strong>
                   </div>
                 </div>
 
@@ -723,9 +725,9 @@ export const SettingsView = ({
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
                       {isLive && (
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.4rem' }}>
                           <div style={{ fontSize: '0.68rem', fontWeight: 650, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                            Live Models Discovered from {aiSettings.provider.toUpperCase()} API ({presets.length}):
+                            Live Models Discovered ({presets.length}):
                           </div>
                           {lastSyncTime && (
                             <span style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
@@ -734,7 +736,11 @@ export const SettingsView = ({
                           )}
                         </div>
                       )}
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.45rem' }}>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 130px), 1fr))',
+                        gap: '0.4rem',
+                      }}>
                         {presets.map(modelName => {
                           const isChosen = (aiSettings.modelOverride || getDefaultModelForProvider(aiSettings.provider)) === modelName;
                           return (
@@ -747,8 +753,8 @@ export const SettingsView = ({
                               }}
                               className="btn btn-sm"
                               style={{
-                                padding: '0.25rem 0.65rem',
-                                fontSize: '0.78rem',
+                                padding: '0.3rem 0.55rem',
+                                fontSize: '0.74rem',
                                 fontFamily: 'var(--font-mono)',
                                 fontWeight: isChosen ? 700 : 500,
                                 backgroundColor: isChosen ? 'var(--brand-primary)' : 'var(--bg-subtle)',
@@ -756,7 +762,12 @@ export const SettingsView = ({
                                 border: `1px solid ${isChosen ? 'var(--brand-primary)' : 'var(--border-subtle)'}`,
                                 borderRadius: 'var(--radius-sm)',
                                 transition: 'all 140ms ease',
+                                textAlign: 'center',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
                               }}
+                              title={modelName}
                             >
                               {modelName}
                             </button>
@@ -768,8 +779,24 @@ export const SettingsView = ({
                 })()}
 
                 {/* Custom Model Override Input */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.15rem' }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>Custom Model ID:</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', marginTop: '0.15rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontWeight: 500 }}>Custom Model ID:</span>
+                    {aiSettings.modelOverride && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAiSettings({ ...aiSettings, modelOverride: undefined });
+                          setTestState({ loading: false, result: null });
+                        }}
+                        className="btn btn-ghost btn-sm"
+                        style={{ fontSize: '0.72rem', color: 'var(--text-muted)', padding: '0.15rem 0.4rem' }}
+                        title="Reset to default model"
+                      >
+                        Reset Default
+                      </button>
+                    )}
+                  </div>
                   <input
                     type="text"
                     placeholder={`e.g. ${getDefaultModelForProvider(aiSettings.provider)}`}
@@ -780,27 +807,14 @@ export const SettingsView = ({
                     }}
                     className="input"
                     style={{
-                      padding: '0.35rem 0.65rem',
+                      padding: '0.38rem 0.65rem',
                       fontSize: '0.8rem',
                       fontFamily: 'var(--font-mono)',
                       backgroundColor: 'var(--bg-canvas)',
-                      flex: 1,
+                      width: '100%',
+                      boxSizing: 'border-box',
                     }}
                   />
-                  {aiSettings.modelOverride && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setAiSettings({ ...aiSettings, modelOverride: undefined });
-                        setTestState({ loading: false, result: null });
-                      }}
-                      className="btn btn-ghost btn-sm"
-                      style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}
-                      title="Reset to default model"
-                    >
-                      Reset Default
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -925,6 +939,9 @@ export const SettingsView = ({
             fontSize: '0.95rem',
             fontWeight: 700,
             transition: 'transform 150ms ease-out',
+            width: '100%',
+            maxWidth: '340px',
+            justifyContent: 'center',
           }}
         >
           <Save size={16} />

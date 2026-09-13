@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { RotateCw, CheckCircle2, Plus, X, Sparkles, BookOpen, Volume2, ChevronLeft, ChevronRight, Clock, HelpCircle } from 'lucide-react';
 import { VocabularyCard } from '../../lib/types';
 import { getNextReviewDate } from '../../lib/adaptiveEngine';
@@ -64,6 +65,16 @@ export const VocabularyView = ({
     setIsFlipped(false);
     setCurrentIndex((prev) => (prev + 1) % activeDeck.length);
   };
+
+  useEffect(() => {
+    if (showAddModal) {
+      const originalOverflow = document.body.style.overflow;
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [showAddModal]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -270,7 +281,7 @@ export const VocabularyView = ({
                   style={{
                     width: '100%',
                     height: '100%',
-                    padding: 'clamp(1.25rem, 5vw, 2.25rem)',
+                    padding: 'clamp(1rem, 3.5vw, 2rem)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
@@ -320,7 +331,8 @@ export const VocabularyView = ({
                     paddingTop: '0.85rem',
                   }}>
                     <RotateCw size={14} />
-                    <span>Click Card or Press Space to Reveal Definition & Usage</span>
+                    <span className="feedback-tab-full">Click Card or Press Space to Reveal Definition & Usage</span>
+                    <span className="feedback-tab-short">Tap Card to Reveal Definition & Usage</span>
                   </div>
                 </div>
               </div>
@@ -332,11 +344,12 @@ export const VocabularyView = ({
                   style={{
                     width: '100%',
                     height: '100%',
-                    padding: 'clamp(1rem, 4vw, 2rem)',
+                    padding: 'clamp(0.85rem, 3vw, 1.85rem)',
                     display: 'flex',
                     flexDirection: 'column',
                     justifyContent: 'space-between',
                     boxSizing: 'border-box',
+                    overflowY: 'auto',
                   }}
                 >
                   {/* Back Header */}
@@ -420,7 +433,7 @@ export const VocabularyView = ({
                   </div>
 
                   {/* Back Footer Hint */}
-                  <div style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.65rem' }}>
+                  <div className="desktop-only" style={{ textAlign: 'center', fontSize: '0.78rem', color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: '0.65rem' }}>
                     Rate your recall below to schedule your next review
                   </div>
                 </div>
@@ -451,142 +464,119 @@ export const VocabularyView = ({
                   <span style={{ fontSize: '0.84rem', fontWeight: 650, color: 'var(--text-primary)' }}>
                     How easily did you recall this word?
                   </span>
-                  <span style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
+                  <span className="feedback-tab-full" style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>
                     Keys: 1, 2, 3, 4
                   </span>
                 </div>
 
-                <div style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(68px, 1fr))',
-                  gap: '0.5rem',
-                }}>
+                <div className="vocab-rating-grid">
                   {/* Again */}
                   <button
                     onClick={() => handleRate('again')}
-                    className="btn"
+                    className="btn vocab-rate-btn"
                     style={{
-                      padding: '0.5rem 0.4rem',
                       backgroundColor: '#fff',
                       border: '1px solid #fecdd3',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem',
-                      transition: 'all 160ms ease-out',
                     }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fff1f2'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
                   >
-                    <span className="font-mono" style={{ fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#ffe4e6', color: '#e11d48', fontWeight: 700 }}>1</span>
-                    <span style={{ fontWeight: 700, color: '#e11d48', fontSize: '0.82rem' }}>Again</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>(1d)</span>
+                    <span className="vocab-rate-key" style={{ backgroundColor: '#ffe4e6', color: '#e11d48' }}>1</span>
+                    <span className="vocab-rate-label" style={{ color: '#e11d48' }}>Again</span>
+                    <span className="vocab-rate-interval">(1d)</span>
                   </button>
 
                   {/* Hard */}
                   <button
                     onClick={() => handleRate('hard')}
-                    className="btn"
+                    className="btn vocab-rate-btn"
                     style={{
-                      padding: '0.5rem 0.4rem',
                       backgroundColor: '#fff',
                       border: '1px solid #fde68a',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem',
-                      transition: 'all 160ms ease-out',
                     }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#fffbeb'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
                   >
-                    <span className="font-mono" style={{ fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#fef3c7', color: '#b45309', fontWeight: 700 }}>2</span>
-                    <span style={{ fontWeight: 700, color: '#b45309', fontSize: '0.82rem' }}>Hard</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>(2d)</span>
+                    <span className="vocab-rate-key" style={{ backgroundColor: '#fef3c7', color: '#b45309' }}>2</span>
+                    <span className="vocab-rate-label" style={{ color: '#b45309' }}>Hard</span>
+                    <span className="vocab-rate-interval">(2d)</span>
                   </button>
 
                   {/* Good */}
                   <button
                     onClick={() => handleRate('good')}
-                    className="btn"
+                    className="btn vocab-rate-btn"
                     style={{
-                      padding: '0.5rem 0.4rem',
                       backgroundColor: '#fff',
                       border: '1px solid #a7f3d0',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem',
-                      transition: 'all 160ms ease-out',
                     }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = '#ecfdf5'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = '#fff'}
                   >
-                    <span className="font-mono" style={{ fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', backgroundColor: '#d1fae5', color: '#047857', fontWeight: 700 }}>3</span>
-                    <span style={{ fontWeight: 700, color: '#047857', fontSize: '0.82rem' }}>Good</span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>(5d)</span>
+                    <span className="vocab-rate-key" style={{ backgroundColor: '#d1fae5', color: '#047857' }}>3</span>
+                    <span className="vocab-rate-label" style={{ color: '#047857' }}>Good</span>
+                    <span className="vocab-rate-interval">(5d)</span>
                   </button>
 
                   {/* Easy */}
                   <button
                     onClick={() => handleRate('easy')}
-                    className="btn"
+                    className="btn vocab-rate-btn"
                     style={{
-                      padding: '0.5rem 0.4rem',
                       backgroundColor: 'var(--accent-zinc)',
                       border: '1px solid var(--accent-zinc)',
-                      borderRadius: 'var(--radius-md)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: '0.4rem',
                       color: '#ffffff',
-                      transition: 'all 160ms ease-out',
                     }}
                     onMouseEnter={e => e.currentTarget.style.backgroundColor = 'var(--accent-zinc-hover)'}
                     onMouseLeave={e => e.currentTarget.style.backgroundColor = 'var(--accent-zinc)'}
                   >
-                    <span className="font-mono" style={{ fontSize: '0.7rem', padding: '1px 5px', borderRadius: '4px', backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff', fontWeight: 700 }}>4</span>
-                    <span style={{ fontWeight: 700, fontSize: '0.82rem' }}>Easy</span>
-                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.7)' }}>(14d)</span>
+                    <span className="vocab-rate-key" style={{ backgroundColor: 'rgba(255,255,255,0.2)', color: '#ffffff' }}>4</span>
+                    <span className="vocab-rate-label">Easy</span>
+                    <span className="vocab-rate-interval" style={{ color: 'rgba(255,255,255,0.75)' }}>(14d)</span>
                   </button>
                 </div>
               </div>
             ) : (
-              <div style={{
-                width: '100%',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
-                  <HelpCircle size={16} color="var(--brand-primary)" />
-                  <span>Attempt mental recall of definition and academic collocations before revealing.</span>
+              <div
+                className="vocabulary-recall-prompt"
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  gap: '0.75rem',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.55rem', fontSize: '0.86rem', color: 'var(--text-secondary)', flex: 1, minWidth: 0 }}>
+                  <HelpCircle size={16} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                  <span style={{ lineHeight: 1.45 }}>Attempt mental recall of definition and academic collocations before revealing.</span>
                 </div>
                 <button
                   onClick={() => setIsFlipped(true)}
                   className="btn btn-primary btn-sm"
-                  style={{ padding: '0.5rem 1rem', fontSize: '0.84rem' }}
+                  style={{ padding: '0.55rem 1.15rem', fontSize: '0.84rem', fontWeight: 650, flexShrink: 0, gap: '0.45rem', whiteSpace: 'nowrap' }}
                 >
-                  <RotateCw size={13} />
-                  <span>Reveal Answer (Space)</span>
+                  <RotateCw size={14} />
+                  <span className="feedback-tab-full">Reveal Answer (Space)</span>
+                  <span className="feedback-tab-short">Reveal Answer</span>
                 </button>
               </div>
             )}
           </div>
 
-          {/* Keyboard Shortcuts Legend */}
-          <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            gap: '1.25rem',
-            fontSize: '0.76rem',
-            color: 'var(--text-muted)',
-            paddingTop: '0.25rem',
-          }}>
+          {/* Keyboard Shortcuts Legend (Desktop Only) */}
+          <div
+            className="desktop-shortcuts-legend"
+            style={{
+              display: 'flex',
+              justifyContent: 'center',
+              gap: '1.25rem',
+              fontSize: '0.76rem',
+              color: 'var(--text-muted)',
+              paddingTop: '0.25rem',
+              flexWrap: 'wrap',
+            }}
+          >
             <span><kbd style={{ padding: '2px 5px', borderRadius: '4px', border: '1px solid var(--border-default)', background: 'var(--bg-subtle)' }}>Space</kbd> Flip Card</span>
             <span><kbd style={{ padding: '2px 5px', borderRadius: '4px', border: '1px solid var(--border-default)', background: 'var(--bg-subtle)' }}>1-4</kbd> Rate Recall</span>
             <span><kbd style={{ padding: '2px 5px', borderRadius: '4px', border: '1px solid var(--border-default)', background: 'var(--bg-subtle)' }}>← / →</kbd> Prev / Next</span>
@@ -602,7 +592,7 @@ export const VocabularyView = ({
       )}
 
       {/* Add Custom Word Modal */}
-      {showAddModal && (
+      {showAddModal && createPortal(
         <div
           onClick={(e) => {
             if (e.target === e.currentTarget) setShowAddModal(false);
@@ -617,7 +607,7 @@ export const VocabularyView = ({
             alignItems: 'center',
             justifyContent: 'center',
             zIndex: 1000,
-            padding: '1.25rem',
+            padding: 'clamp(0.65rem, 3vw, 1.25rem)',
           }}
         >
           <div
@@ -625,47 +615,60 @@ export const VocabularyView = ({
             style={{
               width: '100%',
               maxWidth: '520px',
+              maxHeight: 'min(92vh, 92dvh)',
+              display: 'flex',
+              flexDirection: 'column',
+              position: 'relative',
               boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.08)',
             }}
           >
+            {/* Close Icon Button (Sticky / Safe above content) */}
+            <button
+              onClick={() => setShowAddModal(false)}
+              className="btn btn-ghost btn-sm"
+              style={{
+                position: 'absolute',
+                top: '0.85rem',
+                right: '0.85rem',
+                zIndex: 40,
+                padding: '6px',
+                borderRadius: 'var(--radius-sm)',
+                color: 'var(--text-muted)',
+                backgroundColor: 'var(--bg-surface)',
+                border: '1px solid var(--border-subtle)',
+                boxShadow: '0 2px 6px rgba(0, 0, 0, 0.05)',
+                transition: 'transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, color 160ms ease',
+              }}
+              title="Close (Esc)"
+            >
+              <X size={18} />
+            </button>
+
             <div
               className="double-bezel-inner"
               style={{
-                padding: '1.75rem',
+                padding: 'clamp(1rem, 3.5vw, 1.65rem)',
                 position: 'relative',
                 display: 'flex',
                 flexDirection: 'column',
-                gap: '1.25rem',
+                gap: '1.15rem',
+                overflowY: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                flex: 1,
+                minHeight: 0,
               }}
             >
-              {/* Close Icon Button */}
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="btn btn-ghost btn-sm"
-                style={{
-                  position: 'absolute',
-                  top: '1.25rem',
-                  right: '1.25rem',
-                  padding: '6px',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--text-muted)',
-                }}
-                title="Close (Esc)"
-              >
-                <X size={18} />
-              </button>
-
               {/* Modal Header */}
-              <div>
+              <div style={{ paddingRight: '2.5rem', flexShrink: 0 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.35rem' }}>
                   <span className="badge badge-brand" style={{ fontSize: '0.72rem' }}>
                     <Sparkles size={11} /> Lexical Expansion
                   </span>
                 </div>
-                <h2 style={{ fontSize: '1.35rem', fontWeight: 750, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+                <h2 style={{ fontSize: 'clamp(1.15rem, 3.5vw, 1.35rem)', fontWeight: 750, color: 'var(--text-primary)', letterSpacing: '-0.02em', lineHeight: 1.25 }}>
                   Add High-Yield Vocabulary
                 </h2>
-                <p style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.2rem', lineHeight: 1.4 }}>
                   Add an academic word or collocation to your personalized Spaced Repetition queue.
                 </p>
               </div>
@@ -679,7 +682,7 @@ export const VocabularyView = ({
                 style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}
               >
                 {/* Word & Part of Speech */}
-                <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>
                       Word / Collocation <span style={{ color: 'var(--brand-primary)' }}>*</span>
@@ -728,7 +731,7 @@ export const VocabularyView = ({
                 </div>
 
                 {/* Topic & Target Band */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr', gap: '0.75rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 140px), 1fr))', gap: '0.75rem' }}>
                   <div>
                     <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block', marginBottom: '0.35rem' }}>
                       Topic Domain
@@ -765,7 +768,7 @@ export const VocabularyView = ({
 
                 {/* IELTS Context Sentence */}
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.35rem', flexWrap: 'wrap', gap: '0.25rem' }}>
                     <label style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
                       IELTS Context Sentence
                     </label>
@@ -777,7 +780,7 @@ export const VocabularyView = ({
                     onChange={e => setNewContext(e.target.value)}
                     className="textarea"
                     rows={3}
-                    style={{ resize: 'vertical', minHeight: '76px', fontSize: '0.88rem', lineHeight: '1.5' }}
+                    style={{ resize: 'vertical', minHeight: '72px', fontSize: '0.86rem', lineHeight: '1.5' }}
                   />
                 </div>
 
@@ -786,18 +789,21 @@ export const VocabularyView = ({
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  paddingTop: '0.75rem',
+                  paddingTop: '0.85rem',
                   borderTop: '1px solid var(--border-subtle)',
                   marginTop: '0.25rem',
+                  gap: '0.75rem',
+                  flexWrap: 'wrap',
                 }}>
-                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  <span className="desktop-only" style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     Press Esc to dismiss
                   </span>
-                  <div style={{ display: 'flex', gap: '0.6rem' }}>
+                  <div style={{ display: 'flex', gap: '0.6rem', flex: '1 1 auto', justifyContent: 'flex-end', minWidth: 'min(100%, 200px)' }}>
                     <button
                       type="button"
                       onClick={() => setShowAddModal(false)}
                       className="btn btn-secondary"
+                      style={{ flex: '1 1 auto', maxWidth: '120px', justifyContent: 'center', minHeight: '40px' }}
                     >
                       Cancel
                     </button>
@@ -805,6 +811,7 @@ export const VocabularyView = ({
                       type="submit"
                       disabled={!newWord.trim() || !newDef.trim()}
                       className="btn btn-primary"
+                      style={{ flex: '2 1 auto', justifyContent: 'center', minHeight: '40px' }}
                     >
                       <Plus size={15} />
                       <span>Save to Queue</span>
@@ -814,7 +821,8 @@ export const VocabularyView = ({
               </form>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

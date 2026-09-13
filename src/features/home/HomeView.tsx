@@ -172,27 +172,18 @@ export const HomeView = ({
           </div>
         )}
 
-        {/* Trust Badges with Generous Whitespace */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '3rem',
-          marginTop: '2.5rem',
-          fontSize: '0.85rem',
-          color: 'var(--text-muted)',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CheckCircle2 size={16} color="var(--brand-primary)" />
+        {/* Trust Badges with Emil's Alignment Craft */}
+        <div className="home-trust-ticks">
+          <div className="home-trust-item">
+            <CheckCircle2 size={16} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
             <span>Official Band 1.0–9.0 Descriptors</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CheckCircle2 size={16} color="var(--brand-primary)" />
+          <div className="home-trust-item">
+            <CheckCircle2 size={16} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
             <span>Academic & General Training</span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <CheckCircle2 size={16} color="var(--brand-primary)" />
+          <div className="home-trust-item">
+            <CheckCircle2 size={16} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
             <span>Free & Open Source</span>
           </div>
         </div>
@@ -216,7 +207,7 @@ export const HomeView = ({
         }}>
           
           {/* Card 1: Adaptive Practice */}
-          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="card card-hover" style={{ padding: 'clamp(1.15rem, 3.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="feature-badge feature-badge-teal">
               <BookOpen size={20} />
             </div>
@@ -238,7 +229,7 @@ export const HomeView = ({
           </div>
 
           {/* Card 2: Writing Coach */}
-          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="card card-hover" style={{ padding: 'clamp(1.15rem, 3.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="feature-badge feature-badge-amber">
               <PenTool size={20} />
             </div>
@@ -260,7 +251,7 @@ export const HomeView = ({
           </div>
 
           {/* Card 3: Speaking Examiner */}
-          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="card card-hover" style={{ padding: 'clamp(1.15rem, 3.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="feature-badge feature-badge-blue">
               <Mic size={20} />
             </div>
@@ -282,7 +273,7 @@ export const HomeView = ({
           </div>
 
           {/* Card 4: Spaced Vocabulary Deck */}
-          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="card card-hover" style={{ padding: 'clamp(1.15rem, 3.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="feature-badge feature-badge-purple">
               <Brain size={20} />
             </div>
@@ -304,7 +295,7 @@ export const HomeView = ({
           </div>
 
           {/* Card 5: Strategy Lessons */}
-          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="card card-hover" style={{ padding: 'clamp(1.15rem, 3.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="feature-badge feature-badge-emerald">
               <GraduationCap size={20} />
             </div>
@@ -326,7 +317,7 @@ export const HomeView = ({
           </div>
 
           {/* Card 6: Master Resources Directory */}
-          <div className="card card-hover" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div className="card card-hover" style={{ padding: 'clamp(1.15rem, 3.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div className="feature-badge feature-badge-slate">
               <Globe2 size={20} />
             </div>
@@ -353,7 +344,7 @@ export const HomeView = ({
       {/* Call to Action Footer Box */}
       <div className="double-bezel">
         <div className="double-bezel-inner" style={{
-          padding: '2.5rem',
+          padding: 'clamp(1.5rem, 5vw, 2.5rem)',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',

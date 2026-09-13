@@ -84,9 +84,9 @@ export const DiagnosticView = ({
       {!submitted && (
         <div className="card" style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))',
           gap: '1.25rem',
-          padding: '1.25rem 1.5rem',
+          padding: 'clamp(1rem, 3.5vw, 1.5rem)',
           borderRadius: 'var(--radius-lg)',
         }}>
           <div>

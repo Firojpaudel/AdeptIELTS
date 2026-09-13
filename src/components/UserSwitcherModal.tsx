@@ -55,7 +55,7 @@ export const UserSwitcherModal = ({
       <div className="card fade-in" style={{
         width: '100%',
         maxWidth: '480px',
-        padding: 'var(--space-6)',
+        padding: 'clamp(1.15rem, 4vw, var(--space-6))',
         display: 'flex',
         flexDirection: 'column',
         gap: 'var(--space-5)',
@@ -148,7 +148,7 @@ export const UserSwitcherModal = ({
               />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-3)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 'var(--space-3)' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '0.8125rem', fontWeight: 600, marginBottom: '0.3rem' }}>
                   Target Band:

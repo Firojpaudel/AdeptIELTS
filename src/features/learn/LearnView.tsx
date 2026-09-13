@@ -29,7 +29,7 @@ export const LearnView = () => {
   };
 
   return (
-    <div className="fade-in" style={{ display: 'grid', gridTemplateColumns: 'minmax(260px, 320px) minmax(0, 1fr)', gap: 'var(--space-8)', alignItems: 'start' }}>
+    <div className="fade-in learn-split-grid">
       {/* Lessons Sidebar / Directory */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
         <div style={{ marginBottom: 'var(--space-2)' }}>
@@ -73,7 +73,7 @@ export const LearnView = () => {
               </div>
 
               {isDone ? (
-                <CheckCircle size={16} color="var(--success)" style={{ flexShrink: 0 }} />
+                <CheckCircle size={18} color="var(--success)" style={{ flexShrink: 0 }} />
               ) : (
                 <ChevronRight size={16} color="var(--text-muted)" style={{ flexShrink: 0 }} />
               )}
@@ -83,7 +83,7 @@ export const LearnView = () => {
       </div>
 
       {/* Main Lesson Content Area */}
-      <article className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', padding: 'var(--space-8)' }}>
+      <article className="card" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)', padding: 'clamp(1rem, 3.5vw, 2rem)' }}>
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.4rem' }}>
             <span className="badge badge-brand">{selectedLesson.category}</span>

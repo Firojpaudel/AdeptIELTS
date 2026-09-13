@@ -198,7 +198,7 @@ export const WritingCoachView = () => {
           border: '1px solid var(--brand-primary-border)',
           borderRadius: 'var(--radius-lg)',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flex: 1, minWidth: 'min(100%, 280px)' }}>
             <div style={{
               width: '36px',
               height: '36px',
@@ -210,14 +210,15 @@ export const WritingCoachView = () => {
               justifyContent: 'center',
               color: 'var(--brand-primary)',
               boxShadow: 'var(--shadow-xs)',
+              flexShrink: 0,
             }}>
               <Clock size={18} />
             </div>
-            <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 650, color: 'var(--text-primary)' }}>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: '0.88rem', fontWeight: 650, color: 'var(--text-primary)', lineHeight: 1.35 }}>
                 Exam Simulation: {selectedPrompt.timeMinutes} Minutes Allocated
               </div>
-              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.45, marginTop: '2px' }}>
                 Spend 5m planning & outlining, {selectedPrompt.timeMinutes - 10}m composing, and 5m proofreading. When you are ready, start the timer.
               </div>
             </div>
@@ -230,9 +231,11 @@ export const WritingCoachView = () => {
             style={{
               gap: '0.45rem',
               borderRadius: 'var(--radius-full)',
-              padding: '0.45rem 1.15rem',
+              padding: '0.5rem 1.25rem',
               fontSize: '0.85rem',
               fontWeight: 650,
+              flexShrink: 0,
+              whiteSpace: 'nowrap',
             }}
           >
             <Play size={13} style={{ fill: 'currentColor' }} />
@@ -369,7 +372,8 @@ export const WritingCoachView = () => {
                 }}
               >
                 <FileCheck size={16} />
-                <span>{isEvaluating ? 'Evaluating Rubric...' : 'Evaluate Band & Feedback'}</span>
+                <span className="feedback-tab-full">{isEvaluating ? 'Evaluating Rubric...' : 'Evaluate Band & Feedback'}</span>
+                <span className="feedback-tab-short">{isEvaluating ? 'Evaluating...' : 'Evaluate'}</span>
               </button>
             </div>
           </div>
@@ -387,7 +391,7 @@ export const WritingCoachView = () => {
           }}>
             {/* Band Score & Examiner Summary Header */}
             <div style={{
-              padding: '1.15rem 1.25rem',
+              padding: 'clamp(0.85rem, 3vw, 1.25rem)',
               backgroundColor: 'var(--brand-primary-subtle)',
               border: '1px solid var(--brand-primary-border)',
               borderRadius: 'var(--radius-md)',
@@ -605,7 +609,7 @@ export const WritingCoachView = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
                   gap: '1rem',
                   alignItems: 'start',
                 }}>

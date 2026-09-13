@@ -127,7 +127,7 @@ export const DashboardView = ({
       {primaryRec && (
         <div className="double-bezel">
           <div className="double-bezel-inner" style={{
-            padding: '1.5rem 1.75rem',
+            padding: 'clamp(1rem, 3.5vw, 1.75rem)',
             display: 'flex',
             flexWrap: 'wrap',
             alignItems: 'center',
@@ -185,7 +185,7 @@ export const DashboardView = ({
         
         {/* Left Column (7 cols on desktop, 1 col on mobile): 4 Skills Breakdown */}
         <div className="card dashboard-bento-main" style={{
-          padding: '1.5rem',
+          padding: 'clamp(1rem, 3.5vw, 1.5rem)',
           display: 'flex',
           flexDirection: 'column',
           gap: '1.2rem',
@@ -250,7 +250,7 @@ export const DashboardView = ({
         <div className="dashboard-bento-side" style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           
           {/* Spaced Memory Box */}
-          <div className="card card-hover" style={{ padding: '1.35rem' }}>
+          <div className="card card-hover" style={{ padding: 'clamp(1rem, 3.5vw, 1.35rem)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <Brain size={17} color="var(--brand-primary)" />
@@ -274,12 +274,12 @@ export const DashboardView = ({
           </div>
 
           {/* Quick Metrics Bento Card */}
-          <div className="card" style={{ padding: '1.35rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
+          <div className="card" style={{ padding: 'clamp(1rem, 3.5vw, 1.35rem)', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
             <h4 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--text-primary)' }}>
               Candidate Diagnostics
             </h4>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: '0.75rem' }}>
               <div style={{
                 padding: '0.75rem',
                 backgroundColor: 'var(--bg-subtle)',
@@ -345,7 +345,7 @@ export const DashboardView = ({
           Quick Study Modules
         </h4>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.85rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '0.85rem' }}>
           
           <button
             onClick={() => onNavigate('practice')}

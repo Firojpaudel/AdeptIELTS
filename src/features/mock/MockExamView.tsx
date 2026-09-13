@@ -176,7 +176,7 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
             <span style={{ fontSize: '0.74rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               Select Simulation Engine
             </span>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '0.85rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))', gap: '0.85rem' }}>
               <button
                 type="button"
                 onClick={() => setExamMode('adaptive_ai')}
@@ -296,7 +296,7 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
             </span>
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
               gap: '0.85rem',
             }}>
               <div style={{
@@ -345,36 +345,26 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
 
           {/* Test Center Protocol */}
           <div style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '0.85rem',
-            padding: '1rem 1.25rem',
+            padding: '1.1rem 1.25rem',
             backgroundColor: 'var(--bg-subtle)',
-            border: '1px solid var(--border-subtle)',
             borderRadius: 'var(--radius-lg)',
+            border: '1px solid var(--border-subtle)',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '0.4rem',
           }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: 'var(--radius-sm)',
-              backgroundColor: 'var(--brand-primary-subtle)',
-              color: 'var(--brand-primary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              marginTop: '2px',
-            }}>
-              <Clock size={16} />
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
-              <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)' }}>
-                Official Test Center Protocol
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontWeight: 750, fontSize: '0.95rem', color: 'var(--text-primary)' }}>
+                <Clock size={16} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                <span>Official Test Center Protocol</span>
               </div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                Once initiated, timers run continuously to mirror real exam pressure. Coaching aids are locked until submission, after which your responses are permanently recorded to your diagnostic timeline.
-              </div>
+              <span className="badge badge-zinc" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                STRICT TIMING
+              </span>
             </div>
+            <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+              Once initiated, timers run continuously to mirror real exam pressure. Coaching aids are locked until submission, after which your responses are permanently recorded to your diagnostic timeline.
+            </p>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingTop: '0.5rem', flexWrap: 'wrap', gap: '0.75rem' }}>
@@ -514,7 +504,7 @@ export function MockExamView({ onExitMock, profile, attempts = [], onAttemptReco
               </div>
 
               {/* Strengths vs Flaws */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '0.65rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 220px), 1fr))', gap: '0.65rem' }}>
                 <div style={{ padding: '0.65rem', backgroundColor: 'rgba(16, 185, 129, 0.05)', border: '1px solid rgba(16, 185, 129, 0.2)', borderRadius: 'var(--radius-sm)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: 'var(--success)', fontWeight: 700, fontSize: '0.78rem', marginBottom: '0.25rem' }}>
                     <CheckCircle2 size={13} /> What Went Right

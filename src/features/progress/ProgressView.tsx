@@ -131,8 +131,8 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
       </div>
 
       {/* Top Stat KPI Row (Double-Bezel) */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '1rem' }}>
-        <div className="card" style={{ padding: '1.25rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 200px), 1fr))', gap: '1rem' }}>
+        <div className="card" style={{ padding: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Current Estimated Band
           </div>
@@ -144,7 +144,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
           </div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem' }}>
+        <div className="card" style={{ padding: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Practice Accuracy
           </div>
@@ -160,7 +160,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
           className="card card-hover"
           onClick={() => setShowCalendar(true)}
           style={{
-            padding: '1.25rem',
+            padding: 'clamp(0.9rem, 3vw, 1.25rem)',
             cursor: 'pointer',
             border: '1px solid #fed7aa',
             backgroundColor: '#fffdfa',
@@ -184,7 +184,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
           </div>
         </div>
 
-        <div className="card" style={{ padding: '1.25rem' }}>
+        <div className="card" style={{ padding: 'clamp(0.9rem, 3vw, 1.25rem)' }}>
           <div style={{ fontSize: '0.72rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
             Candidate Module
           </div>
@@ -199,9 +199,9 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
 
       {/* AI Exam & Activity Diagnostic Critique Card */}
       <div className="double-bezel">
-        <div className="double-bezel-inner" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+        <div className="double-bezel-inner" style={{ padding: 'clamp(1rem, 3.5vw, 1.5rem)', display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '1px solid var(--border-subtle)', paddingBottom: '1rem' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.65rem', flex: 1, minWidth: 'min(100%, 280px)' }}>
               <div style={{
                 width: '36px',
                 height: '36px',
@@ -211,19 +211,22 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
+                flexShrink: 0,
+                marginTop: '2px',
               }}>
                 <BarChart3 size={18} />
               </div>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: '1.12rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, lineHeight: 1.3 }}>
                     AI Exam Score & Diagnostic Critique
                   </h3>
-                  <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
-                    Senior IELTS Psychometrician
+                  <span className="badge badge-brand" style={{ fontSize: '0.68rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    <span className="feedback-tab-full">Senior IELTS Psychometrician</span>
+                    <span className="feedback-tab-short">IELTS Psychometrician</span>
                   </span>
                 </div>
-                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.15rem' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.45 }}>
                   Holistic evaluation computed from your stored mock exam scores, error patterns, and subskill metrics.
                 </p>
               </div>
@@ -236,7 +239,8 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
               style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem' }}
             >
               <RefreshCw size={13} className={isCritiquing ? 'spin' : ''} />
-              <span>{isCritiquing ? 'Evaluating Scores...' : 'Re-Evaluate Activities'}</span>
+              <span className="feedback-tab-full">{isCritiquing ? 'Evaluating Scores...' : 'Re-Evaluate Activities'}</span>
+              <span className="feedback-tab-short">{isCritiquing ? 'Evaluating...' : 'Re-Evaluate'}</span>
             </button>
           </div>
 
@@ -248,7 +252,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 style={{
                   backgroundColor: 'var(--bg-subtle)',
                   borderRadius: 'var(--radius-lg)',
-                  padding: '1.5rem',
+                  padding: 'clamp(1rem, 3.5vw, 1.5rem)',
                   border: '1px solid var(--border-subtle)',
                   boxShadow: 'var(--shadow-sm)',
                 }}
@@ -387,7 +391,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(290px, 1fr))', gap: '0.85rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0.85rem' }}>
                   {aiCritique.keyBottlenecks.map((bn, i) => {
                     const skill = bn.affectedSkill || 'reading';
                     const iconColor =
@@ -661,12 +665,12 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                   </span>
                 </div>
 
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '0.85rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: '0.85rem' }}>
                   {aiCritique.priorityDrills.map((drill, i) => (
                     <div
                       key={i}
                       style={{
-                        padding: '1.15rem',
+                        padding: 'clamp(0.95rem, 3vw, 1.25rem)',
                         borderRadius: 'var(--radius-md)',
                         backgroundColor: 'var(--bg-surface)',
                         border: '1px solid var(--border-default)',
@@ -675,21 +679,43 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                         justifyContent: 'space-between',
                         gap: '0.75rem',
                         boxShadow: 'var(--shadow-sm)',
+                        overflow: 'hidden',
                       }}
                     >
                       <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.72rem', fontWeight: 750, color: 'var(--brand-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'flex-start',
+                          flexWrap: 'wrap',
+                          gap: '0.45rem',
+                          marginBottom: '0.45rem',
+                        }}>
+                          <span style={{
+                            fontSize: '0.74rem',
+                            fontWeight: 750,
+                            color: 'var(--brand-primary)',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.04em',
+                            lineHeight: 1.3,
+                          }}>
                             {drill.subskillLabel}
                           </span>
-                          <span className="badge badge-brand" style={{ fontSize: '0.68rem' }}>
+                          <span className="badge badge-brand" style={{
+                            fontSize: '0.68rem',
+                            lineHeight: 1.35,
+                            whiteSpace: 'normal',
+                            wordBreak: 'break-word',
+                            maxWidth: '100%',
+                            padding: '0.25rem 0.55rem',
+                          }}>
                             {drill.estimatedGain}
                           </span>
                         </div>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '0.45rem', lineHeight: 1.45 }}>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', margin: '0 0 0.35rem 0', lineHeight: 1.5 }}>
                           <strong>Key Focus:</strong> {drill.reason}
                         </p>
-                        <p style={{ fontSize: '0.82rem', color: 'var(--text-primary)', marginTop: '0.3rem', lineHeight: 1.45 }}>
+                        <p style={{ fontSize: '0.82rem', color: 'var(--text-primary)', margin: 0, lineHeight: 1.5 }}>
                           <strong>Action Plan:</strong> {drill.action}
                         </p>
                       </div>
@@ -702,10 +728,12 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                           style={{
                             width: '100%',
                             justifyContent: 'center',
-                            fontSize: '0.78rem',
-                            marginTop: '0.35rem',
-                            gap: '0.35rem',
+                            fontSize: '0.8rem',
+                            marginTop: '0.45rem',
+                            padding: '0.55rem 1rem',
+                            gap: '0.4rem',
                             fontWeight: 650,
+                            touchAction: 'manipulation',
                             transition: 'transform 120ms ease-out',
                           }}
                         >
@@ -722,7 +750,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
               <div style={{
                 backgroundColor: 'var(--bg-surface)',
                 borderRadius: 'var(--radius-lg)',
-                padding: '1.35rem',
+                padding: 'clamp(1rem, 3.5vw, 1.35rem)',
                 border: '1px solid var(--border-default)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -756,7 +784,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
                 {/* Timeline Visual Nodes */}
                 <div style={{
                   display: 'grid',
-                  gridTemplateColumns: `repeat(auto-fit, minmax(210px, 1fr))`,
+                  gridTemplateColumns: `repeat(auto-fit, minmax(min(100%, 200px), 1fr))`,
                   gap: '0.75rem',
                   marginTop: '0.25rem',
                 }}>
@@ -889,7 +917,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
             </div>
           ) : (
             <div style={{
-              padding: '2.5rem',
+              padding: 'clamp(1.5rem, 5vw, 2.5rem)',
               textAlign: 'center',
               backgroundColor: 'var(--bg-subtle)',
               borderRadius: 'var(--radius-md)',
@@ -908,7 +936,7 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
       </div>
 
       {/* Recent Question Attempts Log */}
-      <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+      <div className="card" style={{ padding: 'clamp(0.9rem, 3vw, 1.25rem)', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>Recent Question Log</h3>
         {attempts.length > 0 ? (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
@@ -947,15 +975,31 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
       </div>
 
       {/* Cloud-Synced Full Mock Exam History (Turso Database) */}
-      <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <Award size={18} color="var(--brand-primary)" />
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>Full Mock Exam Scores</h3>
+      <div className="card" style={{ padding: 'clamp(1rem, 3.5vw, 1.35rem)', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <div style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: 'var(--brand-primary-subtle)',
+            color: 'var(--brand-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            marginTop: '2px',
+          }}>
+            <Award size={17} />
           </div>
-          <span className="badge badge-brand" style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Database size={11} /> Synced to Turso DB
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.45rem' }}>
+              <h3 style={{ fontSize: '1.02rem', fontWeight: 650, margin: 0, lineHeight: 1.35 }}>Full Mock Exam Scores</h3>
+              <span className="badge badge-brand" style={{ fontSize: '0.68rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <Database size={11} style={{ flexShrink: 0 }} />
+                <span>Turso Cloud</span>
+              </span>
+            </div>
+          </div>
         </div>
 
         {examScores.length > 0 ? (
@@ -994,22 +1038,41 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', padding: '0.5rem 0' }}>
+          <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', padding: '0.35rem 0', lineHeight: 1.55 }}>
             {loadingCloudData ? 'Loading exam scores from Turso database...' : 'No full mock exams completed yet. Take a Timed Mock Exam to log your official scores to the database.'}
           </div>
         )}
       </div>
 
       {/* Cloud-Synced Reading Ledger */}
-      <div className="card" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '0.9rem' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-            <BookOpen size={18} color="var(--brand-primary)" />
-            <h3 style={{ fontSize: '1.05rem', fontWeight: 600 }}>Studied Materials & Reading Ledger</h3>
+      <div className="card" style={{ padding: 'clamp(1rem, 3.5vw, 1.35rem)', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
+          <div style={{
+            width: '34px',
+            height: '34px',
+            borderRadius: 'var(--radius-sm)',
+            backgroundColor: 'var(--brand-primary-subtle)',
+            color: 'var(--brand-primary)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            flexShrink: 0,
+            marginTop: '2px',
+          }}>
+            <BookOpen size={17} />
           </div>
-          <span className="badge badge-brand" style={{ fontSize: '0.7rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-            <Database size={11} /> {readResourceIds.length} items logged in Turso
-          </span>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem', flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.45rem' }}>
+              <h3 style={{ fontSize: '1.02rem', fontWeight: 650, margin: 0, lineHeight: 1.35 }}>
+                <span className="feedback-tab-full">Studied Materials & Reading Ledger</span>
+                <span className="feedback-tab-short">Studied Reading Ledger</span>
+              </h3>
+              <span className="badge badge-brand" style={{ fontSize: '0.68rem', display: 'inline-flex', alignItems: 'center', gap: '0.35rem', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                <Database size={11} style={{ flexShrink: 0 }} />
+                <span>Turso Cloud</span>
+              </span>
+            </div>
+          </div>
         </div>
 
         {readResourceIds.length > 0 ? (
@@ -1033,8 +1096,8 @@ export const ProgressView = ({ profile, attempts, onNavigate }: ProgressViewProp
             ))}
           </div>
         ) : (
-          <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)', padding: '0.5rem 0' }}>
-            {loadingCloudData ? 'Checking reading history from Turso database...' : 'No books or guides marked as read yet. Use the "Mark Read" button in Library or Study Masterclasses to track your readings.'}
+          <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', padding: '0.35rem 0', lineHeight: 1.55 }}>
+            No books or guides marked as read yet. Use the "Mark Read" button in Library or Study Masterclasses to track your readings.
           </div>
         )}
       </div>

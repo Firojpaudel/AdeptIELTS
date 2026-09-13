@@ -241,12 +241,10 @@ export const SpeakingCoachView = () => {
           padding: '0.85rem 1.15rem',
           border: '1px solid var(--border-subtle)',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '0.75rem',
+          flexDirection: 'column',
+          gap: '0.55rem',
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.6rem' }}>
             <span style={{
               fontSize: '0.74rem',
               fontWeight: 750,
@@ -254,21 +252,26 @@ export const SpeakingCoachView = () => {
               letterSpacing: '0.04em',
               color: activeMeta.badgeColor,
               backgroundColor: 'var(--bg-surface)',
-              padding: '0.25rem 0.65rem',
+              padding: '0.25rem 0.7rem',
               borderRadius: 'var(--radius-full)',
               border: '1px solid var(--border-subtle)',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
             }}>
               {activeMeta.title}
             </span>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
-              <Clock size={13} color="var(--brand-primary)" />
-              <span>Standard exam format: <strong>{activeMeta.duration}</strong></span>
-            </span>
-          </div>
 
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-            Max speech limit: <strong>{activeMeta.speakingLimit}s</strong>
-          </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem', flexWrap: 'wrap', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+                <Clock size={13} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+                <span>Format: <strong>{activeMeta.duration}</strong></span>
+              </span>
+              <span style={{ color: 'var(--border-strong)' }}>•</span>
+              <span style={{ color: 'var(--text-muted)' }}>
+                Speech limit: <strong style={{ color: 'var(--text-primary)' }}>{activeMeta.speakingLimit}s</strong>
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Topic Selector Chips for Current Part */}
@@ -385,13 +388,17 @@ export const SpeakingCoachView = () => {
                   fontSize: '0.82rem',
                   fontWeight: 650,
                   color: 'var(--brand-primary)',
+                  gap: '0.5rem',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-                  <Lightbulb size={14} />
-                  <span>Band 8.0+ Model Discourse Markers & Phrasing</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', minWidth: 0, flex: 1 }}>
+                  <Lightbulb size={15} style={{ flexShrink: 0 }} />
+                  <span className="feedback-tab-full">Band 8.0+ Model Discourse Markers & Phrasing</span>
+                  <span className="feedback-tab-short">Band 8.0+ Discourse Markers</span>
                 </div>
-                <span style={{ fontSize: '0.74rem' }}>{showPhrases ? 'Hide' : 'Show Useful Phrases'}</span>
+                <span style={{ fontSize: '0.74rem', whiteSpace: 'nowrap', flexShrink: 0, fontWeight: 700 }}>
+                  {showPhrases ? 'Hide' : 'Show Useful Phrases'}
+                </span>
               </button>
 
               {showPhrases && (
@@ -507,10 +514,11 @@ export const SpeakingCoachView = () => {
 
       {/* Recording & Speech Capture Component */}
       <div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.4rem' }}>
-          <h3 style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
-            <Mic size={17} color="var(--brand-primary)" />
-            <span>Record Your Part {activePart} Response (Up to {selectedPrompt.talkSeconds} seconds)</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.6rem', flexWrap: 'wrap', gap: '0.35rem' }}>
+          <h3 style={{ fontSize: '1.02rem', fontWeight: 700, color: 'var(--text-primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.45rem', lineHeight: 1.35 }}>
+            <Mic size={17} color="var(--brand-primary)" style={{ flexShrink: 0 }} />
+            <span className="feedback-tab-full">Record Your Part {activePart} Response (Up to {selectedPrompt.talkSeconds} seconds)</span>
+            <span className="feedback-tab-short">Record Part {activePart} Response ({selectedPrompt.talkSeconds}s max)</span>
           </h3>
           <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
             Speak clearly into microphone. Live transcription runs automatically.
@@ -596,7 +604,8 @@ export const SpeakingCoachView = () => {
               }}
             >
               <Award size={15} />
-              <span>{isEvaluating ? 'Examiner Evaluating Speech...' : `Evaluate Part ${activePart} Response`}</span>
+              <span className="feedback-tab-full">{isEvaluating ? 'Examiner Evaluating Speech...' : `Evaluate Part ${activePart} Response`}</span>
+              <span className="feedback-tab-short">{isEvaluating ? 'Evaluating...' : `Evaluate Part ${activePart}`}</span>
             </button>
           </div>
         </div>
@@ -607,7 +616,7 @@ export const SpeakingCoachView = () => {
         <div className="card fade-in" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', padding: 'clamp(1rem, 3.5vw, 1.5rem)' }}>
           {/* Estimated Band & Examiner Summary Header */}
           <div style={{
-            padding: '1.25rem',
+            padding: 'clamp(0.85rem, 3vw, 1.25rem)',
             backgroundColor: 'var(--brand-primary-subtle)',
             border: '1px solid var(--brand-primary-border)',
             borderRadius: 'var(--radius-md)',
@@ -838,7 +847,7 @@ export const SpeakingCoachView = () => {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
               <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 250px), 1fr))',
                 gap: '1rem',
                 alignItems: 'start',
               }}>
